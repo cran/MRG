@@ -3,10 +3,15 @@ MRGparam = function(par) {
 
   ret = switch(par,
                MRGobject = "@param MRGobject An object including all
-                 the necessary variables and parameters, from a call to createMRGobject",
-               gdl = "@param gdl A list of gridded data - with different resolutions",
+                 the necessary variables and parameters, from a call to \\code{\\link{createMRGobject}}",
+               gdl = "@param gdl A list of gridded data with different resolutions (from a call to \\code{\\link{gridData}}",
+               MRGinp = "@param MRGinp Either an MRGobject (from a call to \\code{\\link{createMRGobject}}) or
+                           a list of gridded data with different resolutions (from a call to \\code{\\link{gridData}} or
+                           a gridded sf-object (typically from an earlier call to \\code{multiResGrid})",
               himg = "@param himg The grid resulting from a call to multiResGrid",
-               ifs = "@param ifs A data.frame or tibble with the locations and the data of the survey or census data" ,
+              himg1 = "@param himg1 Either a grid resulting from a call to multiResGrid, or a list of such grids",
+              himg2 = "@param himg2 A grid resulting from a call to multiResGrid",
+              ifs = "@param ifs A data.frame or tibble with the locations and the data of the survey or census data" ,
                crsOut = "@param crsOut The coordinate reference system (crs) to be used ",
                ifg = "@param ifg Either a data.frame or tibble or sf-object with the locations and the data of the survey or census data,
                           or a list of such objects." ,
@@ -18,7 +23,10 @@ MRGparam = function(par) {
                               the data sets are not submitted as sf-objects",
                vars = "@param vars Variable(s) of interest that should be aggregated (necessary when ifg is
                         used for individual farm specific anonymization rules)",
-               weights = "@param weights Extrapolation factor(s) (weights) wi of unit i in the sample of units nc 
+              vars1 = "@param vars1 Variable(s) of interest that should be merged from the first grid, or a list of variables,
+                                one for each grid in the list \\code{himg1}",
+              vars2 = "@param vars2 Variable(s) of interest that should be merged from the second grid",
+              weights = "@param weights Extrapolation factor(s) (weights) wi of unit i in the sample of units nc 
                       falling into
                                a specific cell c. Weights are used for disclosure control measures. 
                                A weight of 1 will be used if missing.
@@ -32,7 +40,8 @@ MRGparam = function(par) {
                nlarge = "@param nlarge Parameter to be used if the nlarge(st) farms should count for maximum plim percent of
                         the total value for the variable in the grid cell (see details of \\code{\\link{gridData}})",
                plim = "@param plim See nlarge",
-               verbose = "@param verbose indicates if some extra output should be printed",
+               verbose = "@param verbose Indicates if some extra output should be printed. Usually TRUE/FALSE, but can also have 
+                         a value of 2 for \\code{\\link{multiResGrid}} for even more output.",
                nclus = "@param nclus Number of clusters to use for parallel processing. No parallelization is used
                            for \\code{nclus = 1}.",
                clusType = "@param clusType The type of cluster; see \\code{\\link[parallel]{makeCluster}} for more details.
@@ -50,6 +59,11 @@ MRGparam = function(par) {
                checkDominance = "@param checkDominance Logical - should the dominance rule be applied?",
                checkReliability = "@param checkReliability Logical - should the prediction variance be checked, and used for the aggregation?
                          This considerably increases computation time",
+               pseudoreg = "@param pseudoreg A column with regions to be used to define pseudostrata if checkReliability is TRUE.
+                            This is used for the cases when one or more strata only has a single record (and the weight is 
+                            different from one). This makes variance calculation impossible, so such strata are 
+                            merged into a pseudostrata. If pseudoreg is given (for example a column with the country name,
+                            or NUTS2 region), the pseudostrata will be created separately for each pseudoreg region.", 
                userfun = "@param userfun This gives the possibility to add a user defined function with additional confidentiality rules which 
                              the grid cell has to pass", 
               fargs = "@param fargs The name of the necessary variables of userfun", 
@@ -58,8 +72,8 @@ MRGparam = function(par) {
                            a value of the individual vars above zero (\"individual\") or the total number of holdings in 
                            the data set (\"total\")? ",
                suppresslim = "@param suppresslim Parameter that can be used to avoid that almost empty grid cells are merged with cells 
-                            with considerably higher number of observations. The value is a minimum percentage of the total
-                            potential new cell for a grid cell to be aggregated.",  
+                            with considerably higher number of observations. The value is a minimum share of the total
+                            potential new cell for a grid cell to be aggregated. See below for more details.",  
                sumsmall = "@param sumsmall Logical; should the suppresslimSum value be applied on the sum of
                             small grid cells within the lower resolution grid cell?
                             Note that different combinations of suppreslim and suppreslimSum values 
@@ -98,7 +112,11 @@ MRGparam = function(par) {
                        to be used. Negative values are allowed (such as the default
                        value rounding to the closest 10). See also the details
                        for \\code{digits} in \\code{\\link{round}}.",
-              ellipsis = "@param ... Possible arguments to userfun or other internal functions"
+              na.rm = "@param na.rm Should NA values be removed when summing values (essentially
+                          treating them equal to zero) ",
+              ellipsis = "@param ... Possible arguments to underlying functions",
+              ellipsisMerge = "@param ... Additional grids (himg3, himg4, ...) and variables (vars3, vars4, ...) to be merged. 
+                       Additional grids and variables must be named."
               
 )
 ret

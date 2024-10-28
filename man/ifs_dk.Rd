@@ -3,7 +3,7 @@
 \docType{data}
 \name{ifs_dk}
 \alias{ifs_dk}
-\title{Test data sets for the multiResGrid package}
+\title{Test data sets for the MRG package}
 \format{
 A data frame with 37,088 rows and 14 variables
 \itemize{
@@ -28,7 +28,7 @@ A data frame with 37088 rows and 14 variables
 data(ifs_dk)
 }
 \description{
-Synthetic data set of Danish farming data, similar to the 
+Synthetic data set of Danish farming data, similar to the  
 structure of the real Farm Structure Survey (FSS) data. It contains more than 
 37,000 synthetic records - generated in a way that should
 replicate the structure and the distribution of real data,

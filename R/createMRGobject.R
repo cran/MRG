@@ -27,6 +27,7 @@
 #' @eval MRGparam("sumsmall")
 #' @eval MRGparam("suppresslimSum")
 #' @eval MRGparam("reliabilitySplit")
+#' @eval MRGparam("pseudoreg")
 #' @eval MRGparam("plotIntermediate")
 #' @eval MRGparam("addIntermediate")
 #' @eval MRGparam("postProcess")
@@ -50,7 +51,6 @@
 #' @examples
 #' \donttest{
 #' library(sf)
-#' library(giscoR)
 #'
 #' # These are SYNTHETIC agricultural FSS data 
 #' data(ifs_dk) # Census data
@@ -60,7 +60,6 @@
 #' 
 #' ress = 1000*2^(1:7)
 #' MRGobject = createMRGobject(ifg = ifg, ress = ress, var = "UAA")
-
 #' # Run the adaptive grid function only with farm number as con, then plot results
 #' himg1 = multiResGrid(MRGobject)
 #' 
@@ -72,6 +71,8 @@
 #' 
 #'} 
 #' 
+#' 
+#' @rdname createMRGobject
 #' @export
 createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,  
                            geovar = c("GEO_LCT", "geometry"), lnames = NULL, vars = NULL, weights = NULL, 
@@ -81,7 +82,7 @@ createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,
                            domEstat = TRUE, consistencyCheck = FALSE, outfile = NULL, splitlim = 50000000,
                            checkDominance = TRUE, checkReliability = FALSE, userfun = NULL, strat = NULL,
                            confrules = "individual", suppresslim = 0, sumsmall = FALSE, suppresslimSum = 0,
-                           reliabilitySplit = TRUE, plotIntermediate = FALSE, addIntermediate = FALSE, 
+                           reliabilitySplit = TRUE, pseudoreg = NULL, plotIntermediate = FALSE, addIntermediate = FALSE, 
                            locAdj = "LL", 
                            postProcess = TRUE,
                            rounding = -1, remCols = TRUE, ...) {
@@ -103,7 +104,7 @@ createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,
   
   gdl = gridData(ifg, res = ress, vars = vars, weights = weights, 
                                   nclus = nclus, verbose = verbose)  
-  MRGobject = list(gdl = gdl, ifg = ifg, ress = ress, vars = vars, weights = weights,
+  MRGobject = list(MRGinp = gdl, ifg = ifg, ress = ress, vars = vars, weights = weights,
                    mincount = mincount, countFeatureOrTotal = countFeatureOrTotal, #minpos = minpos, 
                    nlarge = nlarge, plim = plim,
                                  verbose = verbose, nclus = nclus, clusType = clusType,
@@ -113,7 +114,7 @@ createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,
                                  userfun = userfun, strat = strat, confrules = confrules, suppresslim = suppresslim,
                                  sumsmall= sumsmall, suppresslimSum = suppresslimSum, 
                                  plotIntermediate = plotIntermediate, addIntermeidate = addIntermediate, 
-                                 reliabilitySplit = reliabilitySplit,
+                                 reliabilitySplit = reliabilitySplit, pseudoreg = pseudoreg,
                                  locAdj = locAdj, postProcess = postProcess, rounding = rounding, 
                                  remCols = remCols)
 

@@ -1,7 +1,7 @@
 Package: MRG
 Type: Package
 Title: Create Non-Confidential Multi-Resolution Grids
-Version: 0.2.14
+Version: 0.3.1
 Authors@R: c(person(given = c("Jon", "Olav"),
                       family = "Skoien",
                       role = c("aut", "cre"),
@@ -24,8 +24,8 @@ VignetteBuilder: knitr
 NeedsCompilation: no
 Depends: R (>= 3.5.0)
 LazyData: true
-Packaged: 2024-09-10 07:39:55 UTC; skoiejo
+Packaged: 2024-10-28 15:06:27 UTC; skoiejo
 Author: Jon Olav Skoien [aut, cre],
   Nicolas Lampach [aut]
 Repository: CRAN
-Date/Publication: 2024-09-12 17:40:59 UTC
+Date/Publication: 2024-10-28 16:50:16 UTC
