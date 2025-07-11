@@ -27,6 +27,10 @@ to check the confidential grid cells of the final map}
 \item{...}{Additional grids (himg3, himg4, ...) and variables (vars3, vars4, ...) to be merged. 
 Additional grids and variables must be named.}
 }
+\value{
+The function produces a new multiresolution grid, which is a
+\code{\link[sf]{sf}}-object with polygons.
+}
 \description{
 Merge two or more multi-resolution grids to a common resolution
 }
@@ -71,6 +75,7 @@ from the microdata through a joint gridding process.
 \examples{
 \donttest{
 library(sf)
+library(dplyr)
 
 # These are SYNTHETIC agricultural FSS data 
 data(ifs_dk) # Census data
@@ -106,12 +111,17 @@ hh11 = MRGmerge(himg1, himg2, himg3 = himg3, postProcess = TRUE, rounding = -1)
 dim(hh11)
 summary(hh1$UAA-hh11$UAA)
 
-# Try to avoid having the same variable names in two different multi-resolution grids,
-# although it works in this case
+# If two data sets share the same variable, one of them has to be renamed.
+# (A comparison of the two can act as a indication of possible errors 
+# introduced through the post-processing)
 
 himg21 = multiResGrid(ifl, vars = c("UAA", "UAAXK0000_ORG"), ifg = ifg, postProcess = FALSE)
+hh3 = try(MRGmerge(himg1, himg21, himg3 = himg3))
+himg21 = himg21 \%>\% rename(UAA2 = UAA, weight_UAA2 = weight_UAA) 
 hh3 = MRGmerge(himg1, himg21, himg3 = himg3)
-summary(hh3[, c("UAA", "UAA.1")])
+
+
+summary(hh3[, c("UAA", "UAA2")])
 
 himg4 = multiResGrid(ifl, vars = c("UAA", "ft", "UAAXK0000_ORG"), ifg = ifg, postProcess = FALSE)
 summary(hh1[, c("UAA", "UAAXK0000_ORG", "ft")])

@@ -47,11 +47,14 @@
 #' their values are likely to deviate from those that are computed directly
 #' from the microdata through a joint gridding process.
 #' 
-#' 
+#' @returns
+#' The function produces a new multiresolution grid, which is a
+#' \code{\link[sf]{sf}}-object with polygons.
 #' 
 #' @examples
 #' \donttest{
 #' library(sf)
+#' library(dplyr)
 #' 
 #' # These are SYNTHETIC agricultural FSS data 
 #' data(ifs_dk) # Census data
@@ -87,12 +90,17 @@
 #' dim(hh11)
 #' summary(hh1$UAA-hh11$UAA)
 #' 
-#' # Try to avoid having the same variable names in two different multi-resolution grids,
-#' # although it works in this case
+#' # If two data sets share the same variable, one of them has to be renamed.
+#' # (A comparison of the two can act as a indication of possible errors 
+#' # introduced through the post-processing)
 #' 
 #' himg21 = multiResGrid(ifl, vars = c("UAA", "UAAXK0000_ORG"), ifg = ifg, postProcess = FALSE)
+#' hh3 = try(MRGmerge(himg1, himg21, himg3 = himg3))
+#' himg21 = himg21 %>% rename(UAA2 = UAA, weight_UAA2 = weight_UAA) 
 #' hh3 = MRGmerge(himg1, himg21, himg3 = himg3)
-#' summary(hh3[, c("UAA", "UAA.1")])
+#' 
+#' 
+#' summary(hh3[, c("UAA", "UAA2")])
 #' 
 #' himg4 = multiResGrid(ifl, vars = c("UAA", "ft", "UAAXK0000_ORG"), ifg = ifg, postProcess = FALSE)
 #' summary(hh1[, c("UAA", "UAAXK0000_ORG", "ft")])
@@ -122,22 +130,48 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   }
   
   h1 = himgs[[1]]
-  if (is.null(vars[[1]])) vars1 = attr(h1, "vars") else vars1 = vars[[1]]
-  getnames = function(h1) {
-    hnames = names(h1)
-    rids = grep("count|weight|geometry|res|small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq", hnames)
-    hnames[-rids]
-  }
-  if (is.null(vars1)) vars1 = getnames(h1)  
+  if (is.null(vars[[1]])) {
+    vars1 = attr(h1, "vars")
+    vars1 = vars1[!vars1 %in% c("ID", "res", "area", attr(h1, "sf_column"))] 
+  } else vars1 = vars[[1]]
+
+  if (is.null(vars1)) vars1 = getVars(h1)  
   #' @importFrom dplyr rename
-  vars1 = c("count1", "countw1", vars1, paste0("weight_", vars1))
+  vars1 = c("count1", "countw1", vars1, names(h1)[grep("weight_", names(h1))])
+  if (!"count" %in% names(h1)) h1$count = NA
+  if (!"countw" %in% names(h1)) h1$countw = NA
   h1 = h1 %>% rename(count1 = count, countw1 = countw)
+  if (!"ID" %in% names(h1)) {
+    h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
+  } else if (length(unique(h1$ID)) < length(h1$ID)) {
+      h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
+      cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
+    
+  }
+  sfcol = attr(h1, "sf_column")
   for (il in 2:length(himgs)){
     h2 = himgs[[il]]
-    if (is.null(vars[[il]])) vars2 = attr(h2, "vars") else vars2 = vars[[il]]
-    if (is.null(vars2)) vars2 = getnames(h2)  
+    sfcol2 = attr(h2, "sf_column")
+    #' @importFrom sf st_geometry "st_geometry<-"
+    if (sfcol != sfcol2) st_geometry(fam) = sfcol
+    if (!"ID" %in% names(h2)) {
+      h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
+    } else if (length(unique(h2$ID)) < length(h2$ID)) {
+        h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
+        cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
+      }
+    
+    if (!"count" %in% names(h2)) h2$count = NA
+    if (!"countw" %in% names(h2)) h2$countw = NA
+    if (is.null(vars[[il]])) {
+      vars2 = attr(h2, "vars") 
+      vars2 = vars2[!vars2 %in% c("ID", "res", "area", attr(h2, "sf_column"))] 
+    } else vars2 = vars[[il]]
+    if (is.null(vars2)) vars2 = getVars(h2)  
     h2 = h2 %>% rename(!!paste0("count", il) := count, !!paste0("countw", il) := countw, ID2 = ID)
     vars2 = c(paste0("count", il), paste0("countw", il), vars2, names(h2)[grep("weight_", names(h2))])
+    allvars = c(vars1, vars2)
+    if (any(duplicated(allvars))) stop(cat("There are variables with same name, please rename:", allvars[duplicated(allvars)], "\n"))
     #' @importFrom sf st_intersection
     hm = st_intersection(h1, h2)
     hm$newArea = st_area(hm)
@@ -150,7 +184,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     h2u = h2tab$ID2[h2tab$x == 1]
     unx = which(hm$ID %in% h1u & hm$ID2 %in% h2u)   
     une = which(!(hm$ID %in% h1u) & !(hm$ID2 %in% h2u)) 
-    if (length(une) > 0) stop("Something wrong with the overlap")
+    if (length(une) > 0) stop("Overlap error - could it be that at least one of the multiresolution grids has overlapping grid cells?")
     h11 = hm[unx,]
     h1i = which(hm$ID %in% h1tab$ID[h1tab$x > 1])
     h2i = which(hm$ID2 %in% h2tab$ID2[h2tab$x > 1])
@@ -179,6 +213,10 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   vars = vars1[-grep("count|weight_", vars1)]
   attr(h1, "vars") = vars
   if(postProcess) h1 = mergePP(h1, vars = vars1, ...)
+  for (ii in 1:length(himgs)) {
+    if (sum(h1[[paste0("count", ii)]], na.rm = TRUE) == 0) h1[[paste0("count", ii)]] = NULL
+    if (sum(h1[[paste0("countw", ii)]], na.rm = TRUE) == 0) h1[[paste0("countw", ii)]] = NULL
+  }
   h1
 }
 
@@ -207,3 +245,16 @@ if (FALSE) {
   
 }
 
+
+getVars = function(h1, incCount = FALSE) {
+  hnameso = names(h1)
+  hnames = tolower(hnameso)
+  if (incCount) {
+    rids = grep("weight|geometry|res|small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq|id", hnames)
+  } else {
+    rids = grep("count|weight|geometry|res|small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq|id", hnames)
+  }
+  nonum = which(!unlist(lapply(h1, is.numeric) ))
+  rids = unique(c(rids, nonum))
+  if (length(rids) > 0) hnameso[-rids] else hnameso
+}
