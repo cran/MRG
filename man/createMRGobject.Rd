@@ -9,9 +9,10 @@ createMRGobject(
   ifg,
   ress = c(1, 5, 10, 20, 40) * 1000,
   geovar = c("GEO_LCT", "geometry"),
-  lnames = NULL,
+  srvNames = NULL,
   vars = NULL,
   weights = NULL,
+  dummy = "RECORDS",
   mincount = 10,
   countFeatureOrTotal = "feature",
   nlarge = 2,
@@ -53,8 +54,8 @@ or a list of such objects.}
 \item{geovar}{Name of geodata variable in the objects. Must me the same for all of the surveys/censuses, if 
 the data sets are not submitted as sf-objects}
 
-\item{lnames}{Names for the different surveys or censuses if ifg is a list. 
-Typically it could be survey years}
+\item{srvNames}{Names for the different surveys or censuses if ifg is a list. 
+Typically it could be survey years. Not necessary if ifg is a named list}
 
 \item{vars}{Variable(s) of interest that should be aggregated (necessary when ifg is
 used for individual farm specific anonymization rules)}
@@ -66,6 +67,10 @@ falling into
        If only one weight is given, it will be used for all variables. If the length is more than one,
        the length has to be equal to the number of variables. If the same weight is used for several variables,
        it must be repeated in the weights-vector}
+
+\item{dummy}{The name of a dummy variable for the number of records if
+a list is provided. Defaults to "RECORDS", but can be replaced by something
+more specific for particular usage, such as "HOLDING" for agricultural data}
 
 \item{mincount}{The minimum number of farms for a grid cell (threshold rule)}
 
@@ -106,7 +111,7 @@ see \code{\link[parallel]{makeCluster}} for more details.}
 This considerably increases computation time}
 
 \item{userfun}{This gives the possibility to add a user defined function with additional confidentiality rules which 
-the grid cell has to pass}
+the grid cell has to pass, based on the individual records}
 
 \item{strat}{Column name defining the strata for stratified sampling, used if checkReliability is TRUE}
 
@@ -188,6 +193,7 @@ This assures that all processing is done with the same variables.
 \examples{
 \donttest{
 library(sf)
+library(dplyr)
 
 # These are SYNTHETIC agricultural FSS data 
 data(ifs_dk) # Census data
@@ -206,6 +212,22 @@ MRGobject$suppresslim = 0.02
 himg2 = multiResGrid(MRGobject)
 himg3 = multiResGrid(MRGobject, suppresslim = 0.05)
 
+# This examplifies how a list can be passed to the function, representing different
+# survey years, which will then be used to create consistent grid cells for 
+# the different survey years. The differences in this example are just some random 
+# changes to farms and areas
+ifg2020 = ifg
+nd = dim(ifg2020)[1]
+rmult = function(x) {x*runif(length(x), 0.95, 1.05)}
+ifg2010 = ifg2020 \%>\% slice(sample(1:nd, floor(nd*0.9))) \%>\% 
+                      mutate_at(c("UAA", "UAAXK0000_ORG"), rmult)
+ifg2015 = ifg2020 \%>\% slice(sample(1:nd, floor(nd*0.95))) \%>\% 
+                      mutate_at(c("UAA", "UAAXK0000_ORG"), rmult)
+# srvNames are not necessary when the list is named as here, 
+# but could be passed as srvNames = c(2010, 2015, 2020)
+MRGobject2 = createMRGobject(ifg = list("2010" = ifg2010, "2015" = ifg2015, "2020" = ifg2020), 
+          dummy = "HOLDING", vars = c("UAA", "UAAXK0000_ORG"), ress = ress)
+himg4 = multiResGrid(MRGobject2)
 } 
 
 

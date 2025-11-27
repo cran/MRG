@@ -6,6 +6,7 @@
 #' @eval MRGparam("vars1")
 #' @eval MRGparam("vars2")
 #' @eval MRGparam("postProcess")
+#' @eval MRGparam("aggr")
 #' @eval MRGparam("na.rm")
 #' @eval MRGparam("ellipsisMerge")
 #' 
@@ -47,6 +48,24 @@
 #' their values are likely to deviate from those that are computed directly
 #' from the microdata through a joint gridding process.
 #' 
+#' The argument \code{aggr} will decide on the direction of aggregation. 
+#' If \code{aggr == "merge"}, The values in high resolution grid cells will 
+#' be aggregated to match those of lower resolution grid cells in the 
+#' second grid. If \code{aggr == "disaggr"}, the values of the lower resolution
+#' grid cells will be redistributed equally among higher resolution grid cells,
+#' according to their area. 
+#' Note that this will most likely result in grid cell values that are apparently
+#' confidential (for example having less than 10 individuals). These are still
+#' not confidential values, but are average values from a larger area. 
+#' This will in most cases be fine if the data is used for analyses, 
+#' but publication of such values should be done with care.
+#' 
+#' Also note that if more than 2 MRG-grids are merged at the same time, 
+#' then the redistribution will occur more than once. If the resolution of some grid cells
+#' becomes higher for each redistribution, with some of the high resolution grid cells missing,
+#' then the average values might differ for different high resolution grid cells coming from
+#' the same low value grid cell. See the plotted examples of h2 and h22.
+#' 
 #' @returns
 #' The function produces a new multiresolution grid, which is a
 #' \code{\link[sf]{sf}}-object with polygons.
@@ -55,6 +74,8 @@
 #' \donttest{
 #' library(sf)
 #' library(dplyr)
+#' library(ggplot2)
+#' library(viridis)
 #' 
 #' # These are SYNTHETIC agricultural FSS data 
 #' data(ifs_dk) # Census data
@@ -90,6 +111,25 @@
 #' dim(hh11)
 #' summary(hh1$UAA-hh11$UAA)
 #' 
+#' # Here the merging will instead redistribute average values to 
+#' # the higher resolution grid cells, and also seeing the effect
+#' # of merging a third layer
+#' hh2 = MRGmerge(himg1, himg2, aggr = "disaggr")
+#' hh22 = MRGmerge(himg1, himg2, himg3 = himg3, aggr = "disaggr")
+#' himg2$orgShare = himg2$UAAXK0000_ORG/himg2$res^2 * 10000
+#' hh2$orgShare = hh2$UAAXK0000_ORG/hh2$res^2 * 10000
+#' hh22$orgShare = hh22$UAAXK0000_ORG/hh22$res^2 * 10000
+#' # Plot the organic share (organic area relative to grid cell area) for
+#' # the original MRG grid for organic area, and after merging with the higher
+#' # resolution maps.
+#' p1 = ggplot(himg2) + geom_sf(aes(fill = orgShare)) + ggtitle("original") +
+#'       scale_fill_viridis()
+#' p2 = ggplot(hh2) + geom_sf(aes(fill = orgShare)) + ggtitle("merged two")+
+#'       scale_fill_viridis() 
+#' p3 = ggplot(hh22) + geom_sf(aes(fill = orgShare)) + ggtitle("merged three")+
+#'       scale_fill_viridis() 
+#' if (require(patchwork)) p1 + p2 + p3 + plot_spacer() + plot_layout(guides = 'collect')
+#' 
 #' # If two data sets share the same variable, one of them has to be renamed.
 #' # (A comparison of the two can act as a indication of possible errors 
 #' # introduced through the post-processing)
@@ -109,8 +149,10 @@
 #'            
 #'            
 #' @export
-MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALSE, ...) {
+MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALSE, aggr = "merge", ...) {
   # To avoid R CMD check notes for missing global variables
+  if (!missing(vars1) && inherits(vars1, "data.frame")) stop("vars1 is a data.frame. Did you want
+                                          to pass a third MRG-grid? Then it must be named, see the help file.")
   countw = ID = ID2 = NULL
   dots = list(...)
   #  Separate dots in himgs and vars
@@ -134,18 +176,20 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     vars1 = attr(h1, "vars")
     vars1 = vars1[!vars1 %in% c("ID", "res", "area", attr(h1, "sf_column"))] 
   } else vars1 = vars[[1]]
-
+  
   if (is.null(vars1)) vars1 = getVars(h1)  
   #' @importFrom dplyr rename
   vars1 = c("count1", "countw1", vars1, names(h1)[grep("weight_", names(h1))])
   if (!"count" %in% names(h1)) h1$count = NA
   if (!"countw" %in% names(h1)) h1$countw = NA
   h1 = h1 %>% rename(count1 = count, countw1 = countw)
+  #' @importFrom units set_units
+  h1 = h1 %>% mutate(area1 = set_units(st_area(h1), NULL))
   if (!"ID" %in% names(h1)) {
     h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
   } else if (length(unique(h1$ID)) < length(h1$ID)) {
-      h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
-      cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
+    h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
+    cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
     
   }
   sfcol = attr(h1, "sf_column")
@@ -153,14 +197,14 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     h2 = himgs[[il]]
     sfcol2 = attr(h2, "sf_column")
     #' @importFrom sf st_geometry "st_geometry<-"
-    if (sfcol != sfcol2) st_geometry(fam) = sfcol
+    if (sfcol != sfcol2) st_geometry(h2) = sfcol
     if (!"ID" %in% names(h2)) {
       h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
     } else if (length(unique(h2$ID)) < length(h2$ID)) {
-        h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
-        cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
-      }
-    
+      h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
+      cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
+    }
+    h2 = h2 %>% mutate(area2 = set_units(st_area(h2), NULL))    
     if (!"count" %in% names(h2)) h2$count = NA
     if (!"countw" %in% names(h2)) h2$countw = NA
     if (is.null(vars[[il]])) {
@@ -178,38 +222,72 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     units(hm$newArea) = NULL
     arange = diff(range(hm$newArea))
     hm = hm[hm$newArea > arange/1e6,]
-    h1tab = aggregate(rep(1, length(hm$ID)), by = list(ID = hm$ID), sum)
-    h2tab = aggregate(rep(1, length(hm$ID)), by = list(ID2 = hm$ID2), sum)
-    h1u = h1tab$ID[h1tab$x == 1]
-    h2u = h2tab$ID2[h2tab$x == 1]
+    
+    h1tab = aggregate(data.frame(Freq = rep(1, length(hm$ID)), cArea = hm$newArea), by = list(ID = hm$ID), sum)
+    h2tab = aggregate(data.frame(Freq = rep(1, length(hm$ID)), cArea = hm$newArea), by = list(ID2 = hm$ID2), sum)
+    h1u = h1tab$ID[h1tab$Freq == 1]
+    h2u = h2tab$ID2[h2tab$Freq == 1]
     unx = which(hm$ID %in% h1u & hm$ID2 %in% h2u)   
     une = which(!(hm$ID %in% h1u) & !(hm$ID2 %in% h2u)) 
+    unm1 = which(!h1$ID %in% hm$ID)
+    unm2 = which(!h2$ID %in% hm$ID2)
     if (length(une) > 0) stop("Overlap error - could it be that at least one of the multiresolution grids has overlapping grid cells?")
+    
+    
+    h1l = which(hm$area1 > hm$newArea)
+    h2l = which(hm$area2 > hm$area1)
+
     h11 = hm[unx,]
-    h1i = which(hm$ID %in% h1tab$ID[h1tab$x > 1])
-    h2i = which(hm$ID2 %in% h2tab$ID2[h2tab$x > 1])
-    if (length(h1i) > 0) {
-      h1a = hm[h1i,] %>% arrange(ID)
-      h1aggr = aggregate(h1a[,vars2], by=list(ID = h1a$ID), FUN = sum, na.rm = na.rm )
-      h1ids = h1a$ID[!duplicated(h1a$ID)]
-      h1b = h1[h1$ID %in% h1ids,] %>% arrange(ID)
-      if (!all.equal(h1b$ID, h1aggr$ID)) stop("mismatch in aggregated IDs - h1a")
-      h1aggr = cbind(h1b[, vars1], st_drop_geometry(h1aggr))
-    } else h1aggr = NULL
-    if (length(h2i) > 0) {
-      h2a = hm[h2i,] %>% arrange(ID2)
-      h2aggr = aggregate(h2a[,vars1], by=list(ID2 = h2a$ID2), FUN = sum, na.rm = na.rm ) %>% arrange(ID2)
-      h2ids = h2a$ID2[!duplicated(h2a$ID2)]
-      h2b = h2[h2$ID2 %in% h2ids,] %>% arrange(ID2)
-      if (!all.equal(h2b$ID2, h2aggr$ID2)) stop("mismatch in aggregated IDs - h2b")
-      h2aggr = cbind(h2b[, vars2], st_drop_geometry(h2aggr))
-    } else h2aggr = NULL
-    h1 = rbind(h11[, c(vars1, vars2)], h1aggr[,-which(names(h1aggr) == "ID")], h2aggr[,-which(names(h2aggr) == "ID2")])
+    if (length(unm1) > 0) {
+      h11 = bind_rows(h11, h1[unm1,])
+      h1ia = which(hm$ID == h1$ID[unm1])
+    } else h1ia = NULL
+    if (length(unm2) > 0) {
+      h11 = bind_rows(h11, h2[unm2,])
+      h2ia = which(hm$ID2 == h2$ID2[unm2])
+    }
+    h1i = unique(c(which(hm$ID %in% h1tab$ID[h1tab$Freq > 1]), h1l))
+    h2i = unique(c(which(hm$ID2 %in% h2tab$ID2[h2tab$Freq > 1]), h2l))
+    
+    if (aggr == "merge") {
+      if (length(h1i) > 0) {
+        h1a = hm[h1i,] %>% arrange(ID)
+        h1aggr = aggregate(h1a[,vars2], by=list(ID = h1a$ID), FUN = sum, na.rm = na.rm )
+        h1ids = h1a$ID[!duplicated(h1a$ID)]
+        h1b = h1[h1$ID %in% h1ids,] %>% arrange(ID)
+        if (!all.equal(h1b$ID, h1aggr$ID)) stop("mismatch in aggregated IDs - h1a")
+        h1aggr = cbind(h1b[, vars1], st_drop_geometry(h1aggr))
+      } else h1aggr = NULL
+      if (length(h2i) > 0) {
+        h2a = hm[h2i,] %>% arrange(ID2)
+        h2aggr = aggregate(h2a[,vars1], by=list(ID2 = h2a$ID2), FUN = sum, na.rm = na.rm ) %>% arrange(ID2)
+        h2ids = h2a$ID2[!duplicated(h2a$ID2)]
+        h2b = h2[h2$ID2 %in% h2ids,] %>% arrange(ID2)
+        if (!all.equal(h2b$ID2, h2aggr$ID2)) stop("mismatch in aggregated IDs - h2b")
+        h2aggr = cbind(h2b[, vars2], st_drop_geometry(h2aggr))
+      } else h2aggr = NULL
+      h1 = rbind(h11[, c(vars1, vars2)], h1aggr[,-which(names(h1aggr) == "ID")], h2aggr[,-which(names(h2aggr) == "ID2")])
+    } else if (aggr == "disaggr") {
+      #' @importFrom dplyr join_by 
+      hm = hm %>% left_join(., h1tab, by = join_by(ID)) %>% left_join(., h2tab, by = join_by(ID2),
+                                                                      suffix = c(".1", ".2"))
+      h1a = h2a = NULL
+      if (length(h1i) > 0) {
+        h1a = hm[h1i,] %>% arrange(ID)
+        #' @importFrom dplyr across
+        h1a = h1a %>% mutate(across(!!vars1, ~ .x*cArea.2/cArea.1))
+      }
+      if (length(h2i) > 0) {
+        h2a = hm[h2i,] %>% arrange(ID2)
+        h2a = h2a %>% mutate(across(!!vars2, ~ .x*cArea.1/cArea.2))
+      }
+      h1 = rbind(hm[unx,], h1a, h2a)
+    }
     vars1 = c(vars1, vars2)
     h1$ID = 1:dim(h1)[1]
+    h1 = h1 %>% select(-matches("Freq|cArea|res.1|newArea|ID2"))
+    h1$res = sqrt(st_area(h1)) %>% units::set_units(., NULL)
   }
-  h1$res = sqrt(st_area(h1))
-  units(h1$res) = NULL
   vars = vars1[-grep("count|weight_", vars1)]
   attr(h1, "vars") = vars
   if(postProcess) h1 = mergePP(h1, vars = vars1, ...)
@@ -237,7 +315,7 @@ if (FALSE) {
   sum(himg2$UAAXK0000_ORG, na.rm = TRUE)
   sum(himg3$ft)
   colSums(st_drop_geometry(hh1)[, which(names(hh1) %in% c("UAA", "UAAXK0000_ORG", "ft"))], na.rm = TRUE)
-
+  
   sum(st_area(himg1)/1e6)
   sum(st_area(himg2)/1e6)
   sum(st_area(himg3)/1e6)

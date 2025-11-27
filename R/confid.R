@@ -1,6 +1,6 @@
 confid = function(himg, ifgdat, vars, countFeatureOrTotal, mincount, nlarge, plim, domEstat, 
                   checkDominance, checkPpercent,checkReliability, reliabilitySplit, pPercent, userfun, verbose, ...) {
-  #  To avoid R CMD check notes
+#  To avoid R CMD check notes
   weight = data = dominance = NULL
   
   himgdat = st_drop_geometry(himg)

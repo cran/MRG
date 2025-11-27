@@ -13,6 +13,7 @@
 #' @eval MRGparam("ylim") 
 #' @eval MRGparam("crs") 
 #' @eval MRGparam("clip")  
+#' @eval MRGparam("limits")  
 #' @eval MRGparam("transform") 
 #' @eval MRGparam("show.legend") 
 #' @eval MRGparam("option") 
@@ -36,6 +37,7 @@
 #' \donttest{
 #' library(sf)
 #' library(ggplot2)
+#' library(dplyr)
 #' 
 #' if (require(giscoR)) {
 #'   useBorder = TRUE 
@@ -50,7 +52,7 @@
 #' ifg = fssgeo(ifs_dk, locAdj = "LL")
 #' 
 #' if (useBorder) {
-#' # Read country borders, only used for plotting
+#' # Read country borders, only used for plotting, remove oversea regions
 #'   borders = gisco_get_nuts(nuts_level = 0)
 #' }
 #' 
@@ -62,7 +64,7 @@
 #' himg1 = multiResGrid(ifl, vars = "UAA", ifg = ifg)
 #' 
 #' if (useBorder) {
-#'   p1 = MRGplot(himg1, UAA, transform = "log10", borders = borders)
+#'   p1 = MRGplot(himg1, UAA, transform = "log10", borders = borders, clip = TRUE)
 #' } else {
 #'   p1 = MRGplot(himg1, UAA, transform = "log10")
 #' }
@@ -76,7 +78,7 @@
 #' 
 #' @export
 MRGplot = function(himg, var, linecolor, option = "D", lwd = 0, lwdb = 1, borders, name = waiver(), 
-                       title = NULL, xlim, ylim, crs, clip = TRUE, 
+                       title = NULL, xlim, ylim, crs, clip = TRUE, limits = NULL,
                    transform = "identity", show.legend = TRUE) {
   #' @importFrom ggplot2 waiver geom_sf ggplot aes ggtitle theme_bw coord_sf
   if (missing(crs)) crs = st_crs(himg) else himg = st_transform(himg, crs = crs)
@@ -103,8 +105,8 @@ MRGplot = function(himg, var, linecolor, option = "D", lwd = 0, lwdb = 1, border
     p1 = ggplot() + geom_sf(data = himg, aes(fill = {{var}}, color = {{var}}), lwd = lwd, show.legend = show.legend) 
   }
   #' @importFrom viridis scale_fill_viridis scale_color_viridis
-  p1 = p1 + scale_fill_viridis(name = name, trans = transform, option = option) +
-  scale_color_viridis(name = name, trans = transform, option = option) +
+  p1 = p1 + scale_fill_viridis(name = name, trans = transform, limits = limits, option = option) +
+  scale_color_viridis(name = name, trans = transform, limits = limits, option = option) +
   ggtitle(title) +
   theme_bw()
   if (!missing(borders)) p1 = p1 + geom_sf(data = borders, fill = NA, colour='black', lwd = lwdb) 

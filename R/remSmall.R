@@ -108,119 +108,120 @@
 #' for (ipl in 1:6) himg4l[[ipl]] = remSmall(iflOuaa, ress, ipl, ifg = ifg, var = "UAAXK0000_ORG")
 #' 
 #' 
-#'  # Create proper plots
-#'   breaks = c(1,3,10,30,100)
-#'   labels = breaks
-#'   p1 = ggplot() + geom_sf(data = himg1, aes(fill = count, color = count)) +
-#'   scale_fill_viridis( name = "number of \nholdings", trans = "log10", 
+#' # Create proper plots
+#' breaks = c(1,3,10,30,100)
+#' labels = breaks
+#' p1 = ggplot() + geom_sf(data = himg1, aes(fill = count, color = count)) +
+#'      scale_fill_viridis( name = "number of \nholdings", trans = "log10", 
 #'                   breaks = breaks, labels = labels, limits = c(1,100)) +
-#'   scale_color_viridis( name = "number of \nholdings", trans = "log10", 
+#'      scale_color_viridis( name = "number of \nholdings", trans = "log10", 
 #'                  breaks = breaks, labels = labels, limits = c(1,100)) +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("Number of holdings after swapping") +
-#'   theme_bw()
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("Number of holdings after swapping") +
+#'      theme_bw()
+#' if (useBorder) p1 = p1 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
 #' # For comparison the number of organic farms and organic UAA, without taking any
 #' # confidentiality into account
 #' gcompOfarms = ggplot() + geom_sf(data = ifl[[3]], aes(fill = count, color = count)) +
-#'  scale_fill_viridis( name = "number of \nholdings", trans = "log10", 
+#'               scale_fill_viridis( name = "number of \nholdings", trans = "log10", 
 #'                          breaks = breaks, labels = labels, limits = c(1,100)) +
-#'  scale_color_viridis( name = "number of \nholdings", trans = "log10", 
+#'               scale_color_viridis( name = "number of \nholdings", trans = "log10", 
 #'                          breaks = breaks, labels = labels, limits = c(1,100)) +
-#'  geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'  coord_sf(crs = 3035) +
-#'  ggtitle("Number of holdings - ordinary gridded data") +
-#'  theme_bw()
+#'               coord_sf(crs = 3035) +
+#'               ggtitle("Number of holdings - ordinary gridded data") +
+#'               theme_bw()
+#'  if (useBorder) p1 = p1 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   gcompOfarms + p1 + plot_layout(guides = "collect") 
+#'  if (require(patchwork)) gcompOfarms + p1 + plot_layout(guides = "collect") 
 #'
-#'   p2 = ggplot() + geom_sf(data = himg2, aes(fill = count, color = count)) +
-#'   scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
-#'   scale_color_viridis( name = "number of \nholdings", trans = "log10") +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("Number of farms - corrected for farm size") +
-#'   theme_bw()
+#'  p2 = ggplot() + geom_sf(data = himg2, aes(fill = count, color = count)) +
+#'       scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
+#'       scale_color_viridis( name = "number of \nholdings", trans = "log10") +
+#'       coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'       ggtitle("Number of farms - corrected for farm size") +
+#'       theme_bw()
+#'  if (useBorder) p2 = p2 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   p3 = ggplot() + geom_sf(data = himg2, aes(fill = UAA, color = UAA)) +
-#'   scale_fill_viridis( name = "UAA", trans = "log10") +
-#'   scale_color_viridis( name = "UAA", trans = "log10") +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("UAA - corrected for farm size") +
-#'   theme_bw()
+#' p3 = ggplot() + geom_sf(data = himg2, aes(fill = UAA, color = UAA)) +
+#'      scale_fill_viridis( name = "UAA", trans = "log10") +
+#'      scale_color_viridis( name = "UAA", trans = "log10") +
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("UAA - corrected for farm size") +
+#'      theme_bw()
+#' if (useBorder) p3 = p3 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   p4 = ggplot() + geom_sf(data = himg3, aes(fill = count, color = count)) +
-#'   scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
-#'   scale_color_viridis( name = "number of \nholdings", trans = "log10") +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("Number of farms - based on number of organic farms and organic farm size") +
-#'   theme_bw()
+#' p4 = ggplot() + geom_sf(data = himg3, aes(fill = count, color = count)) +
+#'      scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
+#'      scale_color_viridis( name = "number of \nholdings", trans = "log10") +
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("Number of farms - based on number of organic farms and organic farm size") +
+#'      theme_bw()
+#' if (useBorder) p4 = p4 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   p5 = ggplot() + geom_sf(data = himg3, aes(fill = UAAXK0000_ORG, color = UAAXK0000_ORG)) +
-#'   scale_fill_viridis( name = "UAA organic", trans = "log10") +
-#'   scale_color_viridis( name = "UAA organic", trans = "log10") +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("UAA organic - based on organic farm numbers and size") +
-#'   theme_bw()
+#' p5 = ggplot() + geom_sf(data = himg3, aes(fill = UAAXK0000_ORG, color = UAAXK0000_ORG)) +
+#'      scale_fill_viridis( name = "UAA organic", trans = "log10") +
+#'      scale_color_viridis( name = "UAA organic", trans = "log10") +
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("UAA organic - based on organic farm numbers and size") +
+#'      theme_bw()
+#' if (useBorder) p5 = p5 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
+#' 
+#' p6 = ggplot() + geom_sf(data = himg4, aes(fill = count, color = count)) +
+#'      scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
+#'      scale_color_viridis( name = "number of \nholdings", trans = "log10") +
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("Number of organic farms - based on organic farm numbers and size") +
+#'      theme_bw()
+#' if (useBorder) p6 = p6 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   p6 = ggplot() + geom_sf(data = himg4, aes(fill = count, color = count)) +
-#'   scale_fill_viridis( name = "number of \nholdings", trans = "log10") +
-#'   scale_color_viridis( name = "number of \nholdings", trans = "log10") +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("Number of organic farms - based on organic farm numbers and size") +
-#'   theme_bw()
-#'
-#'   uaalims = c(min(c(himg4$UAAXK0000_ORG, iflOuaa[[5]]$UAAXK0000_ORG), na.rm = TRUE),
-#'               max(c(himg4$UAAXK0000_ORG, iflOuaa[[5]]$UAAXK0000_ORG), na.rm = TRUE))
-#'   p7 = ggplot() + geom_sf(data = himg4, aes(fill = UAAXK0000_ORG, color = UAAXK0000_ORG)) +
-#'   scale_fill_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
-#'   scale_color_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle("UAA organic after swapping  ") +
-#'   theme_bw()
+#' uaalims = c(min(c(himg4$UAAXK0000_ORG, iflOuaa[[5]]$UAAXK0000_ORG), na.rm = TRUE),
+#'             max(c(himg4$UAAXK0000_ORG, iflOuaa[[5]]$UAAXK0000_ORG), na.rm = TRUE))
+#' p7 = ggplot() + geom_sf(data = himg4, aes(fill = UAAXK0000_ORG, color = UAAXK0000_ORG)) +
+#'      scale_fill_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
+#'      scale_color_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
+#'      coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'      ggtitle("UAA organic after swapping  ") +
+#'      theme_bw()
+#' if (useBorder) p7 = p7 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
 #' # For comparison the number of organic farms and organic UAA, without taking any
 #' # confidentiality into account
 #'
 #' gcompOUAA = ggplot() + geom_sf(data = iflOuaa[[5]], 
 #'                    aes(fill = UAAXK0000_ORG, color = UAAXK0000_ORG)) +
-#'  scale_fill_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
-#'  scale_color_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
-#'  geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'  coord_sf(crs = 3035) +
-#'  ggtitle("Organic UAA - ordinary gridded data") +
-#'  theme_bw()
+#'             scale_fill_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
+#'             scale_color_viridis( name = "UAA organic", trans = "log10", limits = uaalims) +
+#'             coord_sf(crs = 3035) +
+#'             ggtitle("Organic UAA - ordinary gridded data") +
+#'             theme_bw()
+#' if (useBorder) gcompOUAA = gcompOUAA + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
 #'
-#'   print(gcompOUAA) + p7 +  plot_layout(guides = "collect") 
+#' if (require(patchwork)) print(gcompOUAA) + p7 +  plot_layout(guides = "collect") 
 #'   
-#'   ppl = list()
-#'   counts = do.call("rbind", himg4l[1:5])$count
-#'   clim = c(min(counts, na.rm = TRUE), max(counts, na.rm = TRUE)) 
-#'   for (ipl in 1:length(himg4l)) {
-#'     ppl[[ipl]] = ggplot() + geom_sf(data = himg4l[[ipl]], aes(fill = count, color = count)) +
-#'   scale_fill_viridis( name = "number of \nholdings", trans = "log10", limits = clim) +
-#'   scale_color_viridis( name = "number of \nholdings", trans = "log10", limits = clim) +
-#'   geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-#'   coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
-#'   ggtitle(paste("Base resolution", ress[ipl]/1000, "km")) +
-#'   theme_bw()
-#'   }
-#'   ppl[[1]] + ppl[[2]] + ppl[[3]] + ppl[[4]] + plot_layout(guides = "collect")
+#' ppl = list()
+#' counts = do.call("rbind", himg4l[1:5])$count
+#' clim = c(min(counts, na.rm = TRUE), max(counts, na.rm = TRUE)) 
+#' for (ipl in 1:length(himg4l)) {
+#'   ppl[[ipl]] = ggplot() + geom_sf(data = himg4l[[ipl]], aes(fill = count, color = count)) +
+#'            scale_fill_viridis( name = "number of \nholdings", trans = "log10", limits = clim) +
+#'            scale_color_viridis( name = "number of \nholdings", trans = "log10", limits = clim) +
+#'            coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+#'            ggtitle(paste("Base resolution", ress[ipl]/1000, "km")) +
+#'            theme_bw()
+#'   if (useBorder) ppl[[ipl]] = ppl[[ipl]] + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1)
+#'            
+#' }
+#' if (require(patchwork)) ppl[[1]] + ppl[[2]] + ppl[[3]] + ppl[[4]] + plot_layout(guides = "collect")
 #'   
 #' MRGcluster(action = "stop")
 #'}
 #' @export
 remSmall = function(gdl, ress, ires0, mincount = 10, ifg, var, weight, nlarge = 2, plim = 0.85,
-                        sampleRandom = TRUE, domEstat = TRUE, 
+                    sampleRandom = TRUE, domEstat = TRUE, 
                     verbose = FALSE, nclus = 1, clusType, outfile = NULL,
                     checkDominance = TRUE, checkReliability = TRUE) {
-
+  
   if (!missing(var) && !is.null(var)) {
     if (missing(ifg)) stop(paste("Cannot create values for variable ", var, " without ifg"))
     ifg$gridvar = data.frame(ifg)[,var]
@@ -249,8 +250,8 @@ remSmall = function(gdl, ress, ires0, mincount = 10, ifg, var, weight, nlarge = 
     #    if (!missing(weight) & !missing(var))  limg[,var] = data.frame(limg)[,var]*data.frame(limg)[, weight]
     loh = st_join(himg, limg, join = st_within)
     IDlimgs = unique(limg$ID)
-
-
+    
+    
     if (nclus == 1) {
       applyRes = lapply( 1:length(IDlimgs), FUN = remSmallPixel, IDlimgs, loh, himg,
                          ifg, var, plim, mincount, sampleRandom, nlarge, domEstat, verbose, 
@@ -262,13 +263,13 @@ remSmall = function(gdl, ress, ires0, mincount = 10, ifg, var, weight, nlarge = 
         if (missing(weight)) weight = NULL
         clusterEvalQ(cl, c(library(magrittr), library(dplyr), library(stats), library(rlang),library(sf)))
         clusterExport(cl, c("IDlimgs", "loh", "himg", "ifg", "var",
-                                      "mincount", "sampleRandom", "verbose"), envir = environment())
+                            "mincount", "sampleRandom", "verbose"), envir = environment())
         applyRes = parLapply(cl, 1:length(IDlimgs), fun = remSmallPixel,
-                                            IDlimgs, loh, himg, ifg, var, plim, mincount, sampleRandom, 
-                                            nlarge, domEstat, verbose, checkDominance = checkDominance, checkReliability = checkReliability)
+                             IDlimgs, loh, himg, ifg, var, plim, mincount, sampleRandom, 
+                             nlarge, domEstat, verbose, checkDominance = checkDominance, checkReliability = checkReliability)
       }
     }
-
+    
     for (iID in 1:length(IDlimgs)) {
       ares = applyRes[[iID]]
       if (length(ares) > 1) {
@@ -276,7 +277,7 @@ remSmall = function(gdl, ress, ires0, mincount = 10, ifg, var, weight, nlarge = 
         minds = ares$minds
         linds = ares$linds
         hIDs = ares$hIDs
-
+        
         himg$weight[hlocs[minds]] = sum(himg$weight[hlocs[minds]], himg$weight[hlocs[linds]], na.rm = TRUE)
         himg$weight[hlocs[linds]] = NA
         himg$count[hlocs[minds]] = sum(himg$count[hlocs[minds]], himg$count[hlocs[linds]], na.rm = TRUE)

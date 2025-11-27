@@ -96,7 +96,7 @@ see \code{\link[parallel]{makeCluster}} for more details.}
 This considerably increases computation time}
 
 \item{userfun}{This gives the possibility to add a user defined function with additional confidentiality rules which 
-the grid cell has to pass}
+the grid cell has to pass, based on the individual records}
 
 \item{strat}{Column name defining the strata for stratified sampling, used if checkReliability is TRUE}
 
@@ -210,9 +210,9 @@ This function will find the highest resolution data set that fulfills the
        is explained by 1-nlarge weighted holdings, the grid cell will not pass the confidentiality rule.
        
        It is also possible to apply the p-percent rule. This rule defines a minimum percentage for how close the 
-       second largest produces could be of estimating the production of the largest producer by subtracting
+       second largest producer could be of estimating the production of the largest producer by subtracting
        its own production from the total value of the cell. 
-       \deqn{Y_{cell}-Y_2-Y_1)/Y_1 < pPercent} 
+       \deqn{(Y_{cell}-Y_2-Y_1)/Y_1 < pPercent} 
        where \eqn{Y_{cell}, Y_2, Y_1} represent the total production value of the cell,
        the value of the second largest production, and the value of the largest production,
        respectively.
@@ -272,8 +272,10 @@ This function will find the highest resolution data set that fulfills the
                 or potentially internal variables of \code{multiResGrid.})
          \item The result of the function must be a logical, either the rule was passed 
                for the records of this grid cell, or not (TRUE/FALSE)
-         \item The function can potentially use internal variables of \code{multiResGrid}, however,
-               the meaning of these will have to be understood from the code
+         \item The function can potentially use all internal variables in the internal function \code{confid}. 
+               Only the most useful will be mentioned here, meaning of the rest will have to be understood from the code.
+               
+         
        }
        A simple example of a \code{userfun} is given in the example section below (the one producing \code{himg6})
 }
@@ -351,7 +353,7 @@ himg33 = multiResGrid(himg1, vars = c("UAAXK0000_ORG"), ifg = ifg,
 p31 = ggplot(himg3) + geom_sf(aes(fill = UAA))
 p32 = ggplot(himg3) + geom_sf(aes(fill = UAAXK0000_ORG))
 p33 = ggplot(himg33) + geom_sf(aes(fill = UAAXK0000_ORG))
-p31 + p32 + p33
+if (require(patchwork)) p31 + p32 + p33
 
 # Create multi-resolution grid of UAA, based on survey data,
 # with and without applying reliability check
@@ -397,7 +399,7 @@ if (useBorder) himg00 = st_intersection(dkb, himg0) else himg00 = himg0
 p00 = ggplot() + geom_sf(data = himg00, aes(fill = count, color = count)) +
   scale_fill_viridis( name = "number of farms", trans = "log10") +
   scale_color_viridis( name = "number of farms", trans = "log10") +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("Number of farms for variable grid cell size, only frequency confidentiality") +
   theme_bw()
 if (useBorder) p00 = p00 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -407,7 +409,7 @@ if (useBorder) himg01 = st_intersection(dkb, himg1) else himg01 = himg1
 p01 = ggplot() + geom_sf(data = himg01, aes(fill = count, color = count)) +
   scale_fill_viridis( name = "number of farms", trans = "log10") +
   scale_color_viridis( name = "number of farms", trans = "log10") +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("Number of farms for variable grid cell size, frequency and dominance confidentiality") +
   theme_bw()
 if (useBorder) p01 = p01 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -419,7 +421,7 @@ himg02$orgarea = himg02$UAAXK0000_ORG/units::set_units(st_area(himg02), "km^2")
 units(himg02$orgarea) = NULL
 p02 = ggplot() + geom_sf(data = himg02, aes(fill = orgarea), lwd = 0) +
   scale_fill_viridis( name = "ha / km2") +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("Organic UAA density")  +
   theme_bw()
 if (useBorder) p02 = p02 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -430,7 +432,7 @@ if (useBorder) himg03 = st_intersection(dkb, himg3) else himg03 = himg3
 himg03$ouaashare = himg03$UAAXK0000_ORG/himg03$UAA*100
 p03 = ggplot() + geom_sf(data = himg03, aes(fill = ouaashare), lwd = 0) +
   scale_fill_viridis( name = "\% Organic") +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("Organic share")  +
   theme_bw()
 if (useBorder) p03 = p03 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -449,8 +451,7 @@ himg04$uaashare = himg04$UAA/himg04$area
 himg04$uaashare[himg04$uaashare > 1000] = 1000
 p04 = ggplot() + geom_sf(data = himg04, aes(fill = uaashare), lwd = 0) +
   scale_fill_viridis( name = "\% UAA",  trans = "log10", limits = c(1,1000)) +
-  geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("UAA share (sample without reliability check)")  +
   theme_bw()
 if (useBorder) p04 = p04 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -463,7 +464,7 @@ himg05$uaashare = himg05$UAA/himg05$area
 himg05$uaashare[himg05$uaashare > 1000] = 1000
 p05 = ggplot() + geom_sf(data = himg05, aes(fill = uaashare), lwd = 0) +
   scale_fill_viridis( name = "\% UAA",  trans = "log10", limits = c(1,1000)) +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("UAA share (sample with reliability check)")  +
   theme_bw()
 if (useBorder) p05 = p05 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 
@@ -473,7 +474,7 @@ if (require(patchwork)) p04 + p05 + plot_layout(guides = "collect")
 if (useBorder) himg06 = st_intersection(dkb, himg6) else himg06 = himg6
 p06 = ggplot() + geom_sf(data = himg06, aes(fill = UAA), lwd = 0) +
   scale_fill_viridis( name = "ha") +
-  coord_sf(crs = 3035) +#, xlim = c(2377294, 6400000), ylim = c(1313597, 5628510)) +
+  coord_sf(crs = 3035) +
   ggtitle("UAA, with additional user defined function")  +
   theme_bw()
 if (useBorder) p06 = p06 + geom_sf(data = dkb, fill = NA, colour='black', lwd = 1) 

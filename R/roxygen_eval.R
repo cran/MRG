@@ -1,5 +1,5 @@
 
-MRGparam = function(par) {
+MRGparam = function(par, extra = "") {
 
   ret = switch(par,
                MRGobject = "@param MRGobject An object including all
@@ -8,9 +8,9 @@ MRGparam = function(par) {
                MRGinp = "@param MRGinp Either an MRGobject (from a call to \\code{\\link{createMRGobject}}) or
                            a list of gridded data with different resolutions (from a call to \\code{\\link{gridData}} or
                            a gridded sf-object (typically from an earlier call to \\code{multiResGrid})",
-              himg = "@param himg The grid resulting from a call to multiResGrid",
-              himg1 = "@param himg1 Either a grid resulting from a call to multiResGrid, or a list of such grids",
-              himg2 = "@param himg2 A grid resulting from a call to multiResGrid",
+              himg = "@param himg A multi-resolution grid, typically resulting from a call to multiResGrid",
+              himg1 = "@param himg1 Either a multi-resolution grid (typically resulting from a call to multiResGrid), or a list of such grids",
+              himg2 = "@param himg2 A multi-resolution grid, typically resulting from a call to multiResGrid",
               ifs = "@param ifs A data.frame or tibble with the locations and the data of the survey or census data" ,
                crsOut = "@param crsOut The coordinate reference system (crs) to be used ",
                ifg = "@param ifg Either a data.frame or tibble or sf-object with the locations and the data of the survey or census data,
@@ -18,10 +18,14 @@ MRGparam = function(par) {
                ress = "@param ress A vector with the different resolutions", 
               coords = "@param coords Names of the numeric columns holding coordinates",
               res = "@param res A resolution or a vector with the different resolutions", 
-              lnames = "@param lnames Names for the different surveys or censuses if ifg is a list. 
-                         Typically it could be survey years",
+              dummy = "@param dummy The name of a dummy variable for the number of records if
+                       a list is provided. Defaults to \"RECORDS\", but can be replaced by something
+                       more specific for particular usage, such as \"HOLDING\" for agricultural data",
+              srvNames = "@param srvNames Names for the different surveys or censuses if ifg is a list. 
+                         Typically it could be survey years. Not necessary if ifg is a named list ",
                geovar = "@param geovar Name of geodata variable in the objects. Must me the same for all of the surveys/censuses, if 
                               the data sets are not submitted as sf-objects",
+               geocol = "@param geocol Name(s) of geocolumns in the data set", 
                vars = "@param vars Variable(s) of interest that should be aggregated (necessary when ifg is
                         used for individual farm specific anonymization rules)",
               vars1 = "@param vars1 Variable(s) of interest that should be merged from the first grid, or a list of variables,
@@ -68,7 +72,9 @@ MRGparam = function(par) {
                             merged into a pseudostrata. If pseudoreg is given (for example a column with the country name,
                             or NUTS2 region), the pseudostrata will be created separately for each pseudoreg region.", 
                userfun = "@param userfun This gives the possibility to add a user defined function with additional confidentiality rules which 
-                             the grid cell has to pass", 
+                             the grid cell has to pass, based on the individual records", 
+              userfun2 = "@param userfun2 This gives the possibility to add a user defined function with additional confidentiality rules which 
+                             the grid cell has to pass, only based on the gridded information", 
               fargs = "@param fargs The name of the necessary variables of userfun", 
               strat = "@param strat Column name defining the strata for stratified sampling, used if checkReliability is TRUE",
                confrules = "@param confrules Should the frequency rule (number of holdings) refer to the number of holdings with 
@@ -99,6 +105,9 @@ MRGparam = function(par) {
                           can either be FALSE, or \"jitter\" (adding a small random value to the coordinates, essentially spreading
                           them randomly around the real location), \"UR\", \"UL\", \"LR\" or \"LL\", to describe which corner of the grid 
                           cell the location belong (upper right, upper left, lower right or lower left).",
+              centre = "@param centre logical; if the coordinate should represent the centre of the grid cell. This
+                          should never be TRUE if res is a vector of different resolutions, as the grids will not 
+                          have identical starting points",
               remZeroes = "@param remZeroes Set to TRUE if the gridding should only be done on a 
                             subset of the data set, for which the value(s) of the variable(s) of interest
                             is larger than zero. If there is more than one variable of interest, the subset
@@ -139,12 +148,18 @@ MRGparam = function(par) {
                              \\code{name = NULL} will give no name. ",
               borders = "@param borders A polygon object with borders than can be drawn on top of the multi-resolution grid. The 
                               object will also be used to clip the grid if \\code{clip = TRUE}.",
+              borders2 = "@param borders A polygon object with borders and country codes for creation of INSPIRE coordinate IDs.
+                              This will typically be a NUTS-object that can be downloaded from GISCO: giscoR::gisco_get_nuts(nuts_level = 0, epsg = 3035).",
+              cntrCol = "@param cntrCol The column with country information, if this is already present in the data",
               xlim = "@param xlim The limits for the x-axis. The default is to use the bounding box of the grid.",
               ylim = "@param ylim The limits for the y-axis. The default is to use the bounding box of the grid.",
               title = "@param title The title of the plot",
               crs = "@param crs The coordinate reference system (CRS) into which all data should be projected before plotting. 
                           If not specified, will use the CRS defined in the first sf layer of the plot. ",
               clip = "@param clip Logical; should the grid be clipped to the borders object (if exsisting)?",
+              limits = "@param limits Either \\code{NULL} to use the default scale range or a numeric vector of 
+                           length two providing limits of the scale. Use NA to refer to the existing minimum or maximum. See
+                           \\code{\\link[ggplot2]{continuous_scale}} for more details",
               transform = "@param transform Possible transformation of the color scale, typical values can be  \\code{\"log\"},
                           \\code{\"log10\"} or \\code{\"sqrt\"}, based on available transformations in the 
                           \\code{scales} package. See for example \\code{\\link[scales]{transform_log}} and other transformations for
@@ -173,8 +188,12 @@ MRGparam = function(par) {
               Estat = "@param Estat Indicate if Eurostat is the source of the data set. This is currently the default, 
                             but this might be changed in the future if other providers will follow the same conventions",
               cignore = "@param cignore Logical; Should the function ignore if parameters appear to be 
-                           neither lat-lon or projected"
+                           neither lat-lon or projected",
+              aggr = "@param aggr Should data be aggregated to the largest grid cell (\\code{aggr = \"merge\"}),
+                            or should data from larger grid cells be disaggregated to smaller grid cells
+                               \\code{(aggr = \"disaggr\")}"
+              
               )
-ret
+paste(ret, extra)
 }
                

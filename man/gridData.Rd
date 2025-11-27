@@ -11,9 +11,10 @@ gridData(
   weights = NULL,
   nclus = 1,
   confrules = "individual",
-  crsOut = 3035,
+  crsOut = NA,
   verbose = FALSE,
-  locAdj = FALSE
+  locAdj = FALSE,
+  centre = FALSE
 )
 }
 \arguments{
@@ -46,14 +47,16 @@ the data set ("total")?}
 a value of 2 for \code{\link{multiResGrid}} for even more output.}
 
 \item{locAdj}{parameter to adjust the coordinates if they are exactly on the borders between grid cells. The values
- can either be FALSE, 
- or \"jitter\" (adding a small random value to the coordinates, essentially spreading 
- them randomly around the real location), 
-\"UR\", \"UL\", \"LR\" or \"LL\", to describe which corner of the grid 
-cell the location belong (upper right, upper left, lower right or lower left).
-Please use with care in this function. It will make it possible to produce the grid,but notice 
+             can either be FALSE, or "jitter" (adding a small random value to the coordinates, essentially spreading
+             them randomly around the real location), "UR", "UL", "LR" or "LL", to describe which corner of the grid 
+             cell the location belong (upper right, upper left, lower right or lower left). Please use with care in this function. It 
+will make it possible to produce the grid,but notice 
 that the coordinates of \code{ifg}
-will be left untouched, which can cause problems if this is used in other functions.}
+will be left untouched, which can cause problems if it is used in other functions.}
+
+\item{centre}{logical; if the coordinate should represent the centre of the grid cell. This
+should never be TRUE if res is a vector of different resolutions, as the grids will not 
+have identical starting points}
 }
 \value{
 A hierarchical list of gridded data, in the different resolutions requested.

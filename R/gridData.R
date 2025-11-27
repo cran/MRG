@@ -9,15 +9,11 @@
 #' @eval MRGparam("confrules")
 #' @eval MRGparam("crsOut")
 #' @eval MRGparam("verbose")
-#' @param locAdj parameter to adjust the coordinates if they are exactly on the borders between grid cells. The values
-#'               can either be FALSE, 
-#'               or \"jitter\" (adding a small random value to the coordinates, essentially spreading 
-#'               them randomly around the real location), 
-#'              \"UR\", \"UL\", \"LR\" or \"LL\", to describe which corner of the grid 
-#'              cell the location belong (upper right, upper left, lower right or lower left).
-#'              Please use with care in this function. It will make it possible to produce the grid,but notice 
-#'              that the coordinates of \code{ifg}
-#'              will be left untouched, which can cause problems if this is used in other functions.
+#' @eval MRGparam("locAdj", extra = "Please use with care in this function. It 
+#'              will make it possible to produce the grid,but notice 
+#'              that the coordinates of \\code{ifg}
+#'              will be left untouched, which can cause problems if it is used in other functions.")
+#' @eval MRGparam("centre")
 #' 
 #' 
 #' @details This will create hierarchical grids of the selected variable(s), at the requested resolution(s),
@@ -83,10 +79,18 @@
 #'
 #' @export
 gridData <-function (ifg, res = 1000, vars = NULL, weights = NULL,  
-                   nclus = 1, confrules = "individual", crsOut = 3035, verbose = FALSE, locAdj = FALSE) {
+                   nclus = 1, confrules = "individual", crsOut = NA, verbose = FALSE, 
+                   locAdj = FALSE, centre = FALSE) {
   
+  if (verbose) print(paste("Function environment",  rlang::env_name(environment(fun = gridData))))
+  if (centre & length(res) > 1) warning("centre should not be TRUE if res has more than one resolution, as the grids will not be overlapping")
   if ( !length(weights) %in% c(0,1,length(vars))) stop(paste("The length of weight should be 0,1 or equal to the length of vars"))
-  if (!inherits(ifg, "sf"))  ifg = fssgeo(ifg, crsOut = crsOut, locAdj = locAdj)
+  if (!inherits(ifg, "sf"))  {
+    ifg = fssgeo(ifg, crsOut = crsOut, locAdj = locAdj)
+  } 
+  if (!is.na(crsOut)) {
+    if (st_crs(crsOut) != st_crs(ifg)) ifg = st_transform(ifg, crsOut)
+  } else crsOut = st_crs(ifg)$epsg
   ifg$count = 1
   #' @importFrom terra rast rasterize ext xFromCol yFromRow res values
   #' @importFrom utils object.size
@@ -97,17 +101,17 @@ gridData <-function (ifg, res = 1000, vars = NULL, weights = NULL,
       cl = MRGcluster(nclus = nclus, action = "start")
       clusterEvalQ(cl, c(require(terra), require(sf), require(stars)))
       clusterExport(cl, varlist = c("res", "ifg", "weights", "vars", "addweights"), envir=environment())
-      ret = parLapply(cl, res, fun = gridData, ifg = ifg, weights = weights, vars = vars, verbose = verbose)
-    } else ret = lapply(res, FUN = gridData, ifg = ifg, weights = weights, vars = vars, verbose = verbose)
+      ret = parLapply(cl, res, fun = gridData, ifg = ifg, weights = weights, vars = vars, crsOut = crsOut, verbose = verbose)
+    } else ret = lapply(res, FUN = gridData, ifg = ifg, weights = weights, vars = vars, crsOut = crsOut, verbose = verbose)
     return(ret)
   }
 
   rext = st_bbox(ifg)
-  rext[c("xmin", "ymin")] = floor(rext[c("xmin", "ymin")]/res)*res
-  rext[c("xmax", "ymax")] = ceiling(rext[c("xmax", "ymax")]/res)*res
-  r0 = rast(ext = ext(rext),
-              resolution = res, crs = "EPSG:3035")
-  
+  rext[c("xmin", "ymin")] = floor(rext[c("xmin", "ymin")]/res)*res - ifelse(centre, 0.5*res, 0)
+  rext[c("xmax", "ymax")] = ceiling(rext[c("xmax", "ymax")]/res)*res + ifelse(centre, 0.5*res, 0)
+  if (!is.na(crsOut) && length(grep("EPSG", crsOut)) == 0) rcrs = paste0("EPSG:", crsOut) else rcrs = crsOut
+  r0 = rast(ext = ext(rext), resolution = res, crs = rcrs)
+  if (verbose) print(paste("Resolutions ifg, r0 and crsOut:", st_crs(ifg)$epsg, st_crs(r0)$epsg, crsOut, rcrs))  
     coors = st_coordinates(ifg)
     rx = xFromCol(r0)-res(r0)[1]/2
     ry = yFromRow(r0)-res(r0)[2]/2
@@ -181,12 +185,12 @@ gridData <-function (ifg, res = 1000, vars = NULL, weights = NULL,
     ifsret2$res = res
     ifsret2$ID = 1:dim(ifsret2)[1]
     #' @importFrom sf st_crs st_transform
-    if (!is.null(crsOut))  ifsret2 = st_transform(ifsret2, st_crs(crsOut))
+    if (!is.na(crsOut) & !is.na(st_crs(ifsret2)))  ifsret2 = st_transform(ifsret2, st_crs(crsOut))
   ifsret2
 }
 
 addweights = function(ifg, vars, weights) {
-if (missing(weights) || is.null(weights) || weights == 1) {
+if (missing(weights) || is.null(weights) || (length(weights) == 1 && weights == 1)) {
   for (iw in 1:length(vars)) if (!paste0("weight_", vars[iw]) %in% names(ifg)) ifg[,paste0("weight_", vars[iw])] = 1 
 } else if (length(weights) == 1) { 
   for (iw in 1:length(vars)) if (!paste0("weight_", vars[iw]) %in% names(ifg)) ifg[,paste0("weight_", vars[iw])] = as.numeric(data.frame(ifg)[, weights])

@@ -7,7 +7,7 @@
 MRGpostProcess(himg, vars, remCols = TRUE, rounding = "varying")
 }
 \arguments{
-\item{himg}{The grid resulting from a call to multiResGrid}
+\item{himg}{A multi-resolution grid, typically resulting from a call to multiResGrid}
 
 \item{vars}{Variable(s) of interest that should be aggregated (necessary when ifg is
 used for individual farm specific anonymization rules)}

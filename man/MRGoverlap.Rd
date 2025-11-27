@@ -3,19 +3,20 @@
 \name{MRGoverlap}
 \alias{MRGoverlap}
 \title{Function that finds and merges overlapping grid cells in a multi-resolution grid
-The need for this function comes from an error in the gridding process, 
+The need for this function comes from an error in the gridding process or how 
+different grids have been stitched together, 
 and it can be seen as symptom solving rather than solving the issue. 
 This function will either just show the problematic grid cells or remove the overlaps.}
 \usage{
 MRGoverlap(himg, vars, himg2, action = "sum")
 }
 \arguments{
-\item{himg}{The grid resulting from a call to multiResGrid}
+\item{himg}{A multi-resolution grid, typically resulting from a call to multiResGrid}
 
 \item{vars}{Variable(s) of interest that should be aggregated (necessary when ifg is
 used for individual farm specific anonymization rules)}
 
-\item{himg2}{A grid resulting from a call to multiResGrid}
+\item{himg2}{A multi-resolution grid, typically resulting from a call to multiResGrid}
 
 \item{action}{How to treat the values of overlapping grid cells. Possible values are:
 \describe{
@@ -48,7 +49,8 @@ for different values of "action" be:
 }
 \description{
 Function that finds and merges overlapping grid cells in a multi-resolution grid
-The need for this function comes from an error in the gridding process, 
+The need for this function comes from an error in the gridding process or how 
+different grids have been stitched together, 
 and it can be seen as symptom solving rather than solving the issue. 
 This function will either just show the problematic grid cells or remove the overlaps.
 }
@@ -89,7 +91,6 @@ rather slow. In that case, it might be better to check parts of the grid separat
 \examples{
 \donttest{
 library(sf)
-library(giscoR)
 library(dplyr)
 
 # These are SYNTHETIC agricultural FSS data 
@@ -98,21 +99,17 @@ data(ifs_dk) # Census data
 # Create spatial data
 ifg = fssgeo(ifs_dk, locAdj = "LL")
 
-nuts2 = gisco_get_nuts(nuts_level = 2)
-nuts2 = nuts2 \%>\% filter(CNTR_CODE == "DK") \%>\% st_transform(crs = st_crs(ifg))
-
-ifg$NUTS2 = st_join(ifg, nuts2, join = st_nearest_feature)$NUTS_ID
 ress = c(1,5,10,20,40, 80, 160)*1000
 # Create regular grid of the variables, for three regions
-ifl = gridData(ifg[ifg$NUTS2 \%in\% c("DK03", "DK04", "DK05"),], vars = c("UAA"), res = ress)
-ifl3 = gridData(ifg[ifg$NUTS2 == "DK03",], vars = c("UAA"), res = ress)
-ifl4 = gridData(ifg[ifg$NUTS2 == "DK04",], vars = c("UAA"), res = ress)
-ifl5 = gridData(ifg[ifg$NUTS2 == "DK05",], vars = c("UAA"), res = ress)
+ifl = gridData(ifg[ifg$REGIONS \%in\% c("DK03", "DK04", "DK05"),], vars = c("UAA"), res = ress)
+ifl3 = gridData(ifg[ifg$REGIONS == "DK03",], vars = c("UAA"), res = ress)
+ifl4 = gridData(ifg[ifg$REGIONS == "DK04",], vars = c("UAA"), res = ress)
+ifl5 = gridData(ifg[ifg$REGIONS == "DK05",], vars = c("UAA"), res = ress)
 
 # Create the different multi-resolution grids for different nuts regions
-himg3 = multiResGrid(ifl3, vars = "UAA", ifg = ifg[ifg$NUTS2 == "DK03",], suppresslim = 0.02)
-himg4 = multiResGrid(ifl4, vars = "UAA", ifg = ifg[ifg$NUTS2 == "DK04",], suppresslim = 0.02)
-himg5 = multiResGrid(ifl5, vars = "UAA", ifg = ifg[ifg$NUTS2 == "DK05",], suppresslim = 0.02)
+himg3 = multiResGrid(ifl3, vars = "UAA", ifg = ifg[ifg$REGIONS == "DK03",], suppresslim = 0.02)
+himg4 = multiResGrid(ifl4, vars = "UAA", ifg = ifg[ifg$REGIONS == "DK04",], suppresslim = 0.02)
+himg5 = multiResGrid(ifl5, vars = "UAA", ifg = ifg[ifg$REGIONS == "DK05",], suppresslim = 0.02)
 
 # Bind them together and create new consecutive IDs for the grid cells
 himg = rbind(himg3, himg4, himg5)
@@ -136,14 +133,14 @@ himgd2
 # it is difficult to reprocess just the border grid cells, so 
 # we make a new complete grid
 
-himg1 =  multiResGrid(ifl, vars = "UAA", ifg = ifg[ifg$NUTS2 \%in\% c("DK03", "DK04", "DK05"),],
+himg1 =  multiResGrid(ifl, vars = "UAA", ifg = ifg[ifg$REGIONS \%in\% c("DK03", "DK04", "DK05"),],
                       suppresslim = 0.02)
 himgnew2 = MRGoverlap(himg, himg2 = himg1, action = "replace")
 himgd12 = MRGoverlap(himgnew2, action = "none")
 himgd12
 
-
 }
+
 
 
 }

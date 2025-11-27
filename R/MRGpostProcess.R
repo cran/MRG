@@ -42,7 +42,7 @@ MRGpostProcess = function(himg, vars, remCols = TRUE, rounding = "varying") {
     rs = function(x) {
       if (is.na(x)) return(NA)
       if (x<100){
-        ret = plyr::round_any(x,10)}
+        ret = round(x, -1)}
       else{
         y = 1
         if (substr(as.integer(x), 1, 1) <= 2 ) y = 2 

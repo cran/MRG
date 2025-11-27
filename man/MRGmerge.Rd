@@ -4,12 +4,21 @@
 \alias{MRGmerge}
 \title{Merge two or more multi-resolution grids to a common resolution}
 \usage{
-MRGmerge(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALSE, ...)
+MRGmerge(
+  himg1,
+  himg2,
+  vars1,
+  vars2,
+  na.rm = TRUE,
+  postProcess = FALSE,
+  aggr = "merge",
+  ...
+)
 }
 \arguments{
-\item{himg1}{Either a grid resulting from a call to multiResGrid, or a list of such grids}
+\item{himg1}{Either a multi-resolution grid (typically resulting from a call to multiResGrid), or a list of such grids}
 
-\item{himg2}{A grid resulting from a call to multiResGrid}
+\item{himg2}{A multi-resolution grid, typically resulting from a call to multiResGrid}
 
 \item{vars1}{Variable(s) of interest that should be merged from the first grid, or a list of variables,
 one for each grid in the list \code{himg1}}
@@ -23,6 +32,10 @@ treating them equal to zero)}
 of creation of the multiresolution grid (TRUE), or be done in a separate 
 step afterwards (FALSE). The second option is useful when wanting
 to check the confidential grid cells of the final map}
+
+\item{aggr}{Should data be aggregated to the largest grid cell (\code{aggr = "merge"}),
+or should data from larger grid cells be disaggregated to smaller grid cells
+   \code{(aggr = "disaggr")}}
 
 \item{...}{Additional grids (himg3, himg4, ...) and variables (vars3, vars4, ...) to be merged. 
 Additional grids and variables must be named.}
@@ -71,11 +84,31 @@ grid cell values have usually been rounded, and some might have been
 suppressed. As these rounded and potentially suppressed values are summed,
 their values are likely to deviate from those that are computed directly
 from the microdata through a joint gridding process.
+
+The argument \code{aggr} will decide on the direction of aggregation. 
+If \code{aggr == "merge"}, The values in high resolution grid cells will 
+be aggregated to match those of lower resolution grid cells in the 
+second grid. If \code{aggr == "disaggr"}, the values of the lower resolution
+grid cells will be redistributed equally among higher resolution grid cells,
+according to their area. 
+Note that this will most likely result in grid cell values that are apparently
+confidential (for example having less than 10 individuals). These are still
+not confidential values, but are average values from a larger area. 
+This will in most cases be fine if the data is used for analyses, 
+but publication of such values should be done with care.
+
+Also note that if more than 2 MRG-grids are merged at the same time, 
+then the redistribution will occur more than once. If the resolution of some grid cells
+becomes higher for each redistribution, with some of the high resolution grid cells missing,
+then the average values might differ for different high resolution grid cells coming from
+the same low value grid cell. See the plotted examples of h2 and h22.
 }
 \examples{
 \donttest{
 library(sf)
 library(dplyr)
+library(ggplot2)
+library(viridis)
 
 # These are SYNTHETIC agricultural FSS data 
 data(ifs_dk) # Census data
@@ -110,6 +143,25 @@ dim(hh1)
 hh11 = MRGmerge(himg1, himg2, himg3 = himg3, postProcess = TRUE, rounding = -1)
 dim(hh11)
 summary(hh1$UAA-hh11$UAA)
+
+# Here the merging will instead redistribute average values to 
+# the higher resolution grid cells, and also seeing the effect
+# of merging a third layer
+hh2 = MRGmerge(himg1, himg2, aggr = "disaggr")
+hh22 = MRGmerge(himg1, himg2, himg3 = himg3, aggr = "disaggr")
+himg2$orgShare = himg2$UAAXK0000_ORG/himg2$res^2 * 10000
+hh2$orgShare = hh2$UAAXK0000_ORG/hh2$res^2 * 10000
+hh22$orgShare = hh22$UAAXK0000_ORG/hh22$res^2 * 10000
+# Plot the organic share (organic area relative to grid cell area) for
+# the original MRG grid for organic area, and after merging with the higher
+# resolution maps.
+p1 = ggplot(himg2) + geom_sf(aes(fill = orgShare)) + ggtitle("original") +
+      scale_fill_viridis()
+p2 = ggplot(hh2) + geom_sf(aes(fill = orgShare)) + ggtitle("merged two")+
+      scale_fill_viridis() 
+p3 = ggplot(hh22) + geom_sf(aes(fill = orgShare)) + ggtitle("merged three")+
+      scale_fill_viridis() 
+if (require(patchwork)) p1 + p2 + p3 + plot_spacer() + plot_layout(guides = 'collect')
 
 # If two data sets share the same variable, one of them has to be renamed.
 # (A comparison of the two can act as a indication of possible errors 

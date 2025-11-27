@@ -4,12 +4,14 @@
 \alias{fssgeo}
 \title{Function that creates an sf-object from IFS data}
 \usage{
-fssgeo(ifs, crsOut = 3035, locAdj = FALSE)
+fssgeo(ifs, crsOut = NA, geocol = "GEO_LCT", locAdj = FALSE)
 }
 \arguments{
 \item{ifs}{A data.frame or tibble with the locations and the data of the survey or census data}
 
 \item{crsOut}{The coordinate reference system (crs) to be used}
+
+\item{geocol}{Name(s) of geocolumns in the data set}
 
 \item{locAdj}{parameter to adjust the coordinates if they are exactly on the borders between grid cells. The values
 can either be FALSE, or "jitter" (adding a small random value to the coordinates, essentially spreading

@@ -20,12 +20,13 @@ MRGplot(
   ylim,
   crs,
   clip = TRUE,
+  limits = NULL,
   transform = "identity",
   show.legend = TRUE
 )
 }
 \arguments{
-\item{himg}{The grid resulting from a call to multiResGrid}
+\item{himg}{A multi-resolution grid, typically resulting from a call to multiResGrid}
 
 \item{var}{Which variable to plot}
 
@@ -54,6 +55,10 @@ If not specified, will use the CRS defined in the first sf layer of the plot.}
 
 \item{clip}{Logical; should the grid be clipped to the borders object (if exsisting)?}
 
+\item{limits}{Either \code{NULL} to use the default scale range or a numeric vector of 
+length two providing limits of the scale. Use NA to refer to the existing minimum or maximum. See
+\code{\link[ggplot2]{continuous_scale}} for more details}
+
 \item{transform}{Possible transformation of the color scale, typical values can be  \code{"log"},
 \code{"log10"} or \code{"sqrt"}, based on available transformations in the 
 \code{scales} package. See for example \code{\link[scales]{transform_log}} and other transformations for
@@ -81,6 +86,7 @@ for the grid itself and for the borders. The function uses the
 \donttest{
 library(sf)
 library(ggplot2)
+library(dplyr)
 
 if (require(giscoR)) {
   useBorder = TRUE 
@@ -95,7 +101,7 @@ data(ifs_dk) # Census data
 ifg = fssgeo(ifs_dk, locAdj = "LL")
 
 if (useBorder) {
-# Read country borders, only used for plotting
+# Read country borders, only used for plotting, remove oversea regions
   borders = gisco_get_nuts(nuts_level = 0)
 }
 
@@ -107,7 +113,7 @@ ifl = gridData(ifg, "UAA",res = ress)
 himg1 = multiResGrid(ifl, vars = "UAA", ifg = ifg)
 
 if (useBorder) {
-  p1 = MRGplot(himg1, UAA, transform = "log10", borders = borders)
+  p1 = MRGplot(himg1, UAA, transform = "log10", borders = borders, clip = TRUE)
 } else {
   p1 = MRGplot(himg1, UAA, transform = "log10")
 }
