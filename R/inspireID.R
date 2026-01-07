@@ -71,7 +71,7 @@
 #' 
 #' @export
 inspireID = function(himg, borders, cntrCol) {
-  if (!st_crs(himg)$input == "EPSG:3035") stop("Inspire ID can only be added 
+  if (!st_crs(himg)$epsg == 3035) stop("Inspire ID can only be added 
                                                to grids with EPSG:3035")
 
   #' @importFrom units set_units

@@ -1,8 +1,8 @@
-87272f360942995e6c7f017d4a247c06 *DESCRIPTION
+cf64ddb2d756c41dd254706154fc7ef1 *DESCRIPTION
 6a187545e7f9be2a12199a415808f848 *NAMESPACE
 e1a7066deb180548942cc62247ecb95d *R/MRGcluster.R
 e0ec49713c367c7ae073976eb2fbf0b6 *R/MRGfromDF.R
-7f4e895580a8b3b330a829d75489504a *R/MRGmerge.R
+e4b1ad2ccc6199f70d5ac201965c1ad4 *R/MRGmerge.R
 89a6ddf1012ba821f1ab087716460d0f *R/MRGoverlap.R
 0eafca73ba1d9d161ba8a918b2aa6a8b *R/MRGplot.R
 dfd3cc807100da2cf70feda37637c4f1 *R/MRGpostProcess.R
@@ -12,7 +12,7 @@ f378b0954d31f8cf2d31a2991108417f *R/createMRGobject.R
 cda15462fc15634ffe882f7bd8b811f9 *R/getMRGdefaultParams.R
 16a0fb00cdb70f6b1183351f25db4233 *R/gridData.R
 3416f18191f93713a4e74756d27b3a67 *R/ifsDoc.R
-97219e878343557e1a8c6e0db29268ea *R/inspireID.R
+2db98040641bf74c62b69d92181de9c9 *R/inspireID.R
 e82d951ebbd6635fd232d843a865b8b2 *R/locAdj.R
 bc6704114148430cfe875409692e1815 *R/multiResGrid.R
 a66ad78dce96437ae9107b1db32ca491 *R/print.R
@@ -39,8 +39,8 @@ b4b7197e7a231d401957b4598aa68278 *man/inspireID.Rd
 f761045ffcd4d5053ce9f5976ee46368 *man/locAdjFun.Rd
 d385b9b6b1c55a05361491548ab7d898 *man/multiResGrid.Rd
 ef30456f3aaf223081202dd6df8eea05 *man/remSmall.Rd
-726a036a818ab20f7844536448fd2d84 *tests/multiResGrid.R
-6b82b69d7166aac3ac6daf17b1ec6dc0 *tests/multiResGrid.Rout.save
+0c065d1b70b71514288b83f844cd7b27 *tests/multiResGrid.R
+8764449cc27e1c881e7a89bcee240b44 *tests/multiResGrid.Rout.save
 ae93fe1ab9ec528de72f8d978e2004a2 *vignettes/MRG.rmd
 f4b4badc4ef6f7d244b7bf469facf3b8 *vignettes/MRG.rmd.orig
 7dad3a0bba3fd892d78a16c4a3a945d4 *vignettes/MRG.rmd.orig2

@@ -153,7 +153,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   # To avoid R CMD check notes for missing global variables
   if (!missing(vars1) && inherits(vars1, "data.frame")) stop("vars1 is a data.frame. Did you want
                                           to pass a third MRG-grid? Then it must be named, see the help file.")
-  countw = ID = ID2 = NULL
+  countw = ID = ID2 = area1 = area2 = NULL
   dots = list(...)
   #  Separate dots in himgs and vars
   hmgs = dots[grep("himg", names(dots))]
@@ -183,8 +183,6 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   if (!"count" %in% names(h1)) h1$count = NA
   if (!"countw" %in% names(h1)) h1$countw = NA
   h1 = h1 %>% rename(count1 = count, countw1 = countw)
-  #' @importFrom units set_units
-  h1 = h1 %>% mutate(area1 = set_units(st_area(h1), NULL))
   if (!"ID" %in% names(h1)) {
     h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
   } else if (length(unique(h1$ID)) < length(h1$ID)) {
@@ -194,6 +192,8 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   }
   sfcol = attr(h1, "sf_column")
   for (il in 2:length(himgs)){
+    #' @importFrom units set_units
+    h1 = h1 %>% mutate(area1 = set_units(st_area(h1), NULL))
     h2 = himgs[[il]]
     sfcol2 = attr(h2, "sf_column")
     #' @importFrom sf st_geometry "st_geometry<-"
@@ -204,7 +204,6 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
       h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
       cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
     }
-    h2 = h2 %>% mutate(area2 = set_units(st_area(h2), NULL))    
     if (!"count" %in% names(h2)) h2$count = NA
     if (!"countw" %in% names(h2)) h2$countw = NA
     if (is.null(vars[[il]])) {
@@ -212,6 +211,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
       vars2 = vars2[!vars2 %in% c("ID", "res", "area", attr(h2, "sf_column"))] 
     } else vars2 = vars[[il]]
     if (is.null(vars2)) vars2 = getVars(h2)  
+    h2 = h2 %>% mutate(area2 = set_units(st_area(h2), NULL))    
     h2 = h2 %>% rename(!!paste0("count", il) := count, !!paste0("countw", il) := countw, ID2 = ID)
     vars2 = c(paste0("count", il), paste0("countw", il), vars2, names(h2)[grep("weight_", names(h2))])
     allvars = c(vars1, vars2)
@@ -253,7 +253,8 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
       if (length(h1i) > 0) {
         h1a = hm[h1i,] %>% arrange(ID)
         h1aggr = aggregate(h1a[,vars2], by=list(ID = h1a$ID), FUN = sum, na.rm = na.rm )
-        h1ids = h1a$ID[!duplicated(h1a$ID)]
+        h1aggr$area1 = set_units(st_area(h1aggr), NULL)
+        h1ids = unique(h1a$ID)
         h1b = h1[h1$ID %in% h1ids,] %>% arrange(ID)
         if (!all.equal(h1b$ID, h1aggr$ID)) stop("mismatch in aggregated IDs - h1a")
         h1aggr = cbind(h1b[, vars1], st_drop_geometry(h1aggr))
@@ -261,12 +262,13 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
       if (length(h2i) > 0) {
         h2a = hm[h2i,] %>% arrange(ID2)
         h2aggr = aggregate(h2a[,vars1], by=list(ID2 = h2a$ID2), FUN = sum, na.rm = na.rm ) %>% arrange(ID2)
-        h2ids = h2a$ID2[!duplicated(h2a$ID2)]
+        h2aggr$area2 = set_units(st_area(h2aggr), NULL)
+        h2ids = unique(h2a$ID2)
         h2b = h2[h2$ID2 %in% h2ids,] %>% arrange(ID2)
         if (!all.equal(h2b$ID2, h2aggr$ID2)) stop("mismatch in aggregated IDs - h2b")
         h2aggr = cbind(h2b[, vars2], st_drop_geometry(h2aggr))
       } else h2aggr = NULL
-      h1 = rbind(h11[, c(vars1, vars2)], h1aggr[,-which(names(h1aggr) == "ID")], h2aggr[,-which(names(h2aggr) == "ID2")])
+      h1 = bind_rows(h11[, c(vars1, vars2, "area1", "area2")], h1aggr[,-which(names(h1aggr) == "ID")], h2aggr[,-which(names(h2aggr) == "ID2")])
     } else if (aggr == "disaggr") {
       #' @importFrom dplyr join_by 
       hm = hm %>% left_join(., h1tab, by = join_by(ID)) %>% left_join(., h2tab, by = join_by(ID2),
@@ -287,8 +289,10 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     h1$ID = 1:dim(h1)[1]
     h1 = h1 %>% select(-matches("Freq|cArea|res.1|newArea|ID2"))
     h1$res = sqrt(st_area(h1)) %>% units::set_units(., NULL)
+    if ("area2" %in% names(h1)) h1 = h1 %>% select(-area2)
   }
-  vars = vars1[-grep("count|weight_", vars1)]
+  h1 = h1 %>% select(-area1)
+  vars = vars1[-grep("count|weight_|area1", vars1)]
   attr(h1, "vars") = vars
   if(postProcess) h1 = mergePP(h1, vars = vars1, ...)
   for (ii in 1:length(himgs)) {

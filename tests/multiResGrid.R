@@ -4,32 +4,29 @@ library(tidyr)
 library(dplyr)
 # Neccessary to silence sf startup messages
 suppressMessages(library(sf))
-if (require(giscoR, quietly = TRUE)) {
-# Read nuts borders, used for extracting smaller data set 
-  borders = gisco_get_nuts(nuts_level = 2)
-  dkb = borders[borders$CNTR_CODE == "DK",] %>% st_transform(crs = 3035)
-} else {
-  mrgpath = find.package("MRG")
-  load(file.path(mrgpath, "ex/dkb.rda"))
-}
-#'
+#
+# Danish regions borders used to extract data for regions. 
+# Originally downloaded through dkb = giscoR::gisco_get_nuts(nuts_level = 2, country = "DK", year = 2016, epsg = 3035)
+mrgpath = find.package("MRG")
+load(file.path(mrgpath, "ex/dkb.rda"))
+#
 # These are SYNTHETIC agricultural FSS data 
 data(ifs_dk) # Census data
 ifs_weight = ifs_dk %>% dplyr::filter(Sample == 1) # Extract weighted subsample
-
+#
 # Create spatial data
 ifg = fssgeo(ifs_dk, locAdj = "LL")
 fsg = fssgeo(ifs_weight, locAdj = "LL")
-
+#
 ifg$dkb = st_join(ifg, dkb)$NUTS_ID
 ifg = ifg[!is.na(ifg$dkb) & ifg$dkb == "DK01",]
 fsg$dkb = st_join(fsg, dkb)$NUTS_ID
 fsg = fsg[!is.na(fsg$dkb) & fsg$dkb == "DK01",]
-
+#
 ifg$ft = as.numeric(substr(ifg$FARMTYPE, 3, 4))^2
-
+#
 s2 = Sys.time()
-#'
+#
 # Set the base resolutions, and create a hierarchical list with gridded data
 ress = c(1,5,10,20,40)*1000
 # Gridding Utilized agricultural area (UAA), organic UAA and ft together
