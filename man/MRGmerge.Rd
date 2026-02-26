@@ -9,6 +9,9 @@ MRGmerge(
   himg2,
   vars1,
   vars2,
+  addVars1,
+  addVars2,
+  useAllVars = FALSE,
   na.rm = TRUE,
   postProcess = FALSE,
   aggr = "merge",
@@ -24,6 +27,15 @@ MRGmerge(
 one for each grid in the list \code{himg1}}
 
 \item{vars2}{Variable(s) of interest that should be merged from the second grid}
+
+\item{addVars1}{variable(s) to be added to vars1 (normally used if vars1 is found from 
+the attributes of himg1, but new columns have later been added to it}
+
+\item{addVars2}{variable(s) to be added to vars2 (normally used if vars2 is found from 
+the attributes of himg2, but new columns have later been added to it}
+
+\item{useAllVars}{logical; should all variables be used in the merging process (applies
+to all objects)}
 
 \item{na.rm}{Should NA values be removed when summing values (essentially
 treating them equal to zero)}
@@ -53,16 +65,29 @@ resolution, i.e., it will select the grid cells with the lowest resolution,
 as these are the ones defining the restrictions.  
 
 The function will merge the variable names in \code{vars1, vars2, ...}
-if they exist. If they are missing, the function will look for variable
-names in the attributes of the grids (\code{attr(himg, "vars")}). These
-are added by \code{\link{multiResGrid}}, but will often disappear if the
-grid has been manipulated, or has been exported to another format for transmission.
-
+if they exist. 
 If the variables are not given as \code{vars} or attributes, the function
 will try to guess them from the column names. Typical column names used by
 MRG (mostly temporary variables such as \code{small}, \code{confidential} etc)
 will be ignored. If variable names partly coincide with any of these names,
 or with \code{count}, \code{res}, \code{geometry}, it is necessary to specify vars.
+
+The function can also use "vars" from (\code{attr(himg, "vars")}). These
+are added or updated by \code{\link{multiResGrid}} and \code{\link{multiResGrid}}, 
+but might disappear if the
+grid has been manipulated, or has been exported to another format for transmission.
+The function will by default not merge the values of new columns
+that have been added outside MRG-functions, instead it will give a warning
+that the object has changed. This can be fixed in different ways
+
+
+\enumerate{ 
+\item{New variables are added to attr(himg, \"vars\") (The function will still issue this warning) }
+\item{All merging variables are added to vars1, vars2, etc }
+\item{New variables are added to addVars1, addVars2, etc }
+\item{All columns are used (set \code{useAllVars = TRUE)}. This is used for all objects, and might 
+      cause other isues with repeated variable names in different objects"}
+}      
 
 The multi-resolution grids must be passed as named parameters if more than two 
 are given. 

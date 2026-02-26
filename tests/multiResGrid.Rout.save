@@ -1,7 +1,7 @@
 
-R version 4.3.1 (2023-06-16 ucrt) -- "Beagle Scouts"
-Copyright (C) 2023 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -152,7 +152,7 @@ Key: <strat>
 5 of the subsets included strata with only one record. 
  You might want to check the strata or consider a lower value for reliabilitySplit.[1] "ires 5 40000 #himg-cells: 48 ; removed: 18 ; added: 1 ; confidential: 1"
 5 of the subsets included strata with only one record. 
- You might want to check the strata or consider a lower value for reliabilitySplit.> summary(himg0, digits = 5)
+ You might want to check the strata or consider a lower value for reliabilitySplit.> gsub("NA's", "NAs ", summary(himg0, digits = 5))
      count           countw           res              ID      
  Min.   : 10.0   Min.   : 10.0   Min.   : 5000   Min.   : 1.0  
  1st Qu.: 20.0   1st Qu.: 20.0   1st Qu.: 5000   1st Qu.:13.5  
@@ -160,7 +160,7 @@ Key: <strat>
  Mean   : 37.4   Mean   : 37.4   Mean   : 7549   Mean   :26.0  
  3rd Qu.: 30.0   3rd Qu.: 30.0   3rd Qu.:10000   3rd Qu.:38.5  
  Max.   :500.0   Max.   :500.0   Max.   :40000   Max.   :51.0  
- NA's   :1       NA's   :1                                     
+ NAs    :1       NAs    :1                                     
           geometry 
  POLYGON      :51  
  epsg:3035    : 0  
@@ -169,7 +169,7 @@ Key: <strat>
                    
                    
                    
-> summary(himg1, digits = 5)
+> gsub("NA's", "NAs ", summary(himg1, digits = 5))
      count           countw           UAA            weight_UAA   
  Min.   : 10.0   Min.   : 10.0   Min.   :  110.0   Min.   : 10.0  
  1st Qu.: 20.0   1st Qu.: 20.0   1st Qu.:  425.0   1st Qu.: 20.0  
@@ -177,7 +177,7 @@ Key: <strat>
  Mean   : 37.4   Mean   : 37.4   Mean   : 1750.6   Mean   : 36.8  
  3rd Qu.: 30.0   3rd Qu.: 30.0   3rd Qu.: 1775.0   3rd Qu.: 30.0  
  Max.   :500.0   Max.   :500.0   Max.   :18000.0   Max.   :500.0  
- NA's   :1       NA's   :1       NA's   :1         NA's   :1      
+ NAs    :1       NAs    :1       NAs    :1         NAs    :1      
       res              ID                geometry 
  Min.   : 5000   Min.   : 1.0   POLYGON      :51  
  1st Qu.: 5000   1st Qu.:13.5   epsg:3035    : 0  
@@ -188,7 +188,7 @@ Key: <strat>
                                                   
 > # To avoid FAQ 7.31 problem in summary - mean(himg3$UAA) = 19182.5 is not consistently rounded to 19182 or 19183 
 > himg3$UAA = himg3$UAA + 0.001
-> summary(himg3, digits = 5)
+> gsub("NA's", "NAs ", summary(himg3, digits = 5))
      count         countw         UAA        UAAXK0000_ORG    weight_UAA 
  Min.   : 20   Min.   : 20   Min.   :  900   Min.   :   0   Min.   : 20  
  1st Qu.:200   1st Qu.:200   1st Qu.:13725   1st Qu.:1500   1st Qu.:200  
@@ -196,7 +196,7 @@ Key: <strat>
  Mean   :420   Mean   :420   Mean   :19225   Mean   :2125   Mean   :420  
  3rd Qu.:600   3rd Qu.:600   3rd Qu.:28500   3rd Qu.:2875   3rd Qu.:600  
  Max.   :900   Max.   :900   Max.   :30000   Max.   :4000   Max.   :900  
- NA's   :5     NA's   :5     NA's   :5       NA's   :5      NA's   :5    
+ NAs    :5     NAs    :5     NAs    :5       NAs    :5      NAs    :5    
  weight_UAAXK0000_ORG      res              ID             geometry
  Min.   : 0.0         Min.   : 5000   Min.   :1   POLYGON      :9  
  1st Qu.:22.5         1st Qu.:10000   1st Qu.:3   epsg:3035    :0  
@@ -204,9 +204,9 @@ Key: <strat>
  Mean   :42.5         Mean   :26667   Mean   :5                    
  3rd Qu.:60.0         3rd Qu.:40000   3rd Qu.:7                    
  Max.   :90.0         Max.   :40000   Max.   :9                    
- NA's   :5                                                         
+ NAs    :5                                                         
 > himg4$UAA = himg4$UAA + 0.001
-> summary(himg4, digits = 5)
+> gsub("NA's", "NAs ", summary(himg4, digits = 5))
      count         countw         UAA        UAAXK0000_ORG    weight_UAA 
  Min.   : 20   Min.   : 20   Min.   :  900   Min.   :   0   Min.   : 20  
  1st Qu.:190   1st Qu.:190   1st Qu.: 7000   1st Qu.:1100   1st Qu.:190  
@@ -214,7 +214,7 @@ Key: <strat>
  Mean   :322   Mean   :322   Mean   :14780   Mean   :1700   Mean   :322  
  3rd Qu.:260   3rd Qu.:260   3rd Qu.:27000   3rd Qu.:2000   3rd Qu.:260  
  Max.   :900   Max.   :900   Max.   :30000   Max.   :4000   Max.   :900  
- NA's   :8     NA's   :8     NA's   :8       NA's   :8      NA's   :8    
+ NAs    :8     NAs    :8     NAs    :8       NAs    :8      NAs    :8    
  weight_UAAXK0000_ORG      res              ID              geometry 
  Min.   : 0           Min.   : 1000   Min.   : 1   POLYGON      :13  
  1st Qu.:20           1st Qu.:10000   1st Qu.: 4   epsg:3035    : 0  
@@ -222,8 +222,8 @@ Key: <strat>
  Mean   :30           Mean   :20077   Mean   : 7                     
  3rd Qu.:20           3rd Qu.:20000   3rd Qu.:10                     
  Max.   :90           Max.   :40000   Max.   :13                     
- NA's   :8                                                           
-> summary(himg5, digits = 5)
+ NAs    :8                                                           
+> gsub("NA's", "NAs ", summary(himg5, digits = 5))
      count            countw             UAA            weight_UAA     
  Min.   : 10.00   Min.   : 10.000   Min.   :  110.0   Min.   : 10.000  
  1st Qu.: 15.00   1st Qu.: 20.000   1st Qu.:  400.0   1st Qu.: 20.000  
@@ -231,7 +231,7 @@ Key: <strat>
  Mean   : 32.34   Mean   : 39.362   Mean   : 1851.9   Mean   : 39.362  
  3rd Qu.: 20.00   3rd Qu.: 30.000   3rd Qu.: 1650.0   3rd Qu.: 30.000  
  Max.   :400.00   Max.   :500.000   Max.   :18000.0   Max.   :500.000  
- NA's   :1        NA's   :1         NA's   :1         NA's   :1        
+ NAs    :1        NAs    :1         NAs    :1         NAs    :1        
       res                ID                 geometry 
  Min.   : 5000.0   Min.   : 1.00   POLYGON      :48  
  1st Qu.: 5000.0   1st Qu.:12.75   epsg:3035    : 0  
@@ -258,7 +258,7 @@ Key: <strat>
 [1] "ires 2 5000 #himg-cells: 118 ; removed: 1192 ; added: 108 ; confidential: 10"
 [1] "ires 3 10000 #himg-cells: 92 ; removed: 40 ; added: 14 ; confidential: 13"
 [1] "ires 4 20000 #himg-cells: 82 ; removed: 12 ; added: 2 ; confidential: 11"
-> summary(himg1,digits = 5)
+> gsub("NA's", "NAs ", summary(himg1, digits = 5))
      count           countw           UAA            weight_UAA   
  Min.   : 10.0   Min.   : 10.0   Min.   :  110.0   Min.   : 10.0  
  1st Qu.: 20.0   1st Qu.: 20.0   1st Qu.:  445.0   1st Qu.: 20.0  
@@ -266,7 +266,7 @@ Key: <strat>
  Mean   : 37.2   Mean   : 37.2   Mean   : 1747.6   Mean   : 36.6  
  3rd Qu.: 30.0   3rd Qu.: 30.0   3rd Qu.: 1760.0   3rd Qu.: 30.0  
  Max.   :490.0   Max.   :490.0   Max.   :17960.0   Max.   :490.0  
- NA's   :1       NA's   :1       NA's   :1         NA's   :1      
+ NAs    :1       NAs    :1       NAs    :1         NAs    :1      
       res              ID                geometry 
  Min.   : 5000   Min.   : 1.0   POLYGON      :51  
  1st Qu.: 5000   1st Qu.:13.5   epsg:3035    : 0  
@@ -275,7 +275,7 @@ Key: <strat>
  3rd Qu.:10000   3rd Qu.:38.5                     
  Max.   :40000   Max.   :51.0                     
                                                   
-> summary(himg2, digits = 5)
+> gsub("NA's", "NAs ", summary(himg2, digits = 5))
      count             countw             UAA           weight_UAA     
  Min.   : 10.000   Min.   : 10.000   Min.   : 110.0   Min.   : 10.000  
  1st Qu.: 20.000   1st Qu.: 20.000   1st Qu.: 475.0   1st Qu.: 20.000  
@@ -283,7 +283,7 @@ Key: <strat>
  Mean   : 26.714   Mean   : 26.714   Mean   :1245.4   Mean   : 26.286  
  3rd Qu.: 30.000   3rd Qu.: 30.000   3rd Qu.:1452.5   3rd Qu.: 30.000  
  Max.   :190.000   Max.   :190.000   Max.   :7310.0   Max.   :190.000  
- NA's   :7         NA's   :7         NA's   :7        NA's   :7        
+ NAs    :7         NAs    :7         NAs    :7        NAs    :7        
       res                ID              geometry 
  Min.   : 1000.0   Min.   : 1   POLYGON      :77  
  1st Qu.: 5000.0   1st Qu.:20   epsg:3035    : 0  
@@ -292,7 +292,7 @@ Key: <strat>
  3rd Qu.: 5000.0   3rd Qu.:58                     
  Max.   :20000.0   Max.   :77                     
                                                   
-> summary(himg3, digits = 5)
+> gsub("NA's", "NAs ", summary(himg3, digits = 5))
      count             countw             UAA           weight_UAA     
  Min.   : 10.000   Min.   : 10.000   Min.   : 110.0   Min.   : 10.000  
  1st Qu.: 20.000   1st Qu.: 20.000   1st Qu.: 465.0   1st Qu.: 20.000  
@@ -300,7 +300,7 @@ Key: <strat>
  Mean   : 26.197   Mean   : 26.197   Mean   :1226.8   Mean   : 25.775  
  3rd Qu.: 30.000   3rd Qu.: 30.000   3rd Qu.:1365.0   3rd Qu.: 30.000  
  Max.   :190.000   Max.   :190.000   Max.   :7310.0   Max.   :190.000  
- NA's   :11        NA's   :11        NA's   :11       NA's   :11       
+ NAs    :11        NAs    :11        NAs    :11       NAs    :11       
       res                ID                 geometry 
  Min.   : 1000.0   Min.   : 1.00   POLYGON      :82  
  1st Qu.: 5000.0   1st Qu.:21.25   epsg:3035    : 0  
@@ -313,24 +313,24 @@ Key: <strat>
 > s5 = Sys.time()
 > ## IGNORE_RDIFF_BEGIN
 > s5-s4
-Time difference of 4.573779 secs
+Time difference of 3.414267 secs
 > s4-s3
-Time difference of 8.967661 secs
+Time difference of 9.770344 secs
 > s3-s2
-Time difference of 12.57585 secs
+Time difference of 9.554141 secs
 > s2-s1
-Time difference of 6.354798 secs
+Time difference of 5.23296 secs
 > 
 > s5-s1
-Time difference of 32.47208 secs
+Time difference of 27.97171 secs
 > s4-s1
-Time difference of 27.89831 secs
+Time difference of 24.55745 secs
 > s3-s1
-Time difference of 18.93064 secs
+Time difference of 14.7871 secs
 > s2-s1
-Time difference of 6.354798 secs
+Time difference of 5.23296 secs
 > ## IGNORE_RDIFF_END
 > 
 > proc.time()
    user  system elapsed 
-  31.00    1.95   32.64 
+  26.31    5.17   28.09 

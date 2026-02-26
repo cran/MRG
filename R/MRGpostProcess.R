@@ -86,5 +86,7 @@ MRGpostProcess = function(himg, vars, remCols = TRUE, rounding = "varying") {
   matchrem = "small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq|singlimg|pPerc"
   if (remCols) himg = himg %>% select(!matches(matchrem))
   if (!missing(vars)) attr(himg, "vars") = vars
+  attr(himg, "allVars") = getVars(himg)
   himg
 }
+

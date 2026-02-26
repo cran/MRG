@@ -31,6 +31,12 @@ MRGparam = function(par, extra = "") {
               vars1 = "@param vars1 Variable(s) of interest that should be merged from the first grid, or a list of variables,
                                 one for each grid in the list \\code{himg1}",
               vars2 = "@param vars2 Variable(s) of interest that should be merged from the second grid",
+              addVars1 = "@param addVars1 variable(s) to be added to vars1 (normally used if vars1 is found from 
+                           the attributes of himg1, but new columns have later been added to it",
+              addVars2 = "@param addVars2 variable(s) to be added to vars2 (normally used if vars2 is found from 
+                           the attributes of himg2, but new columns have later been added to it",
+              useAllVars = "@param useAllVars logical; should all variables be used in the merging process (applies
+                             to all objects)",
               weights = "@param weights Extrapolation factor(s) (weights) wi of unit i in the sample of units nc 
                       falling into
                                a specific cell c. Weights are used for disclosure control measures. 

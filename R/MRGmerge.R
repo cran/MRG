@@ -5,6 +5,9 @@
 #' @eval MRGparam("himg2")
 #' @eval MRGparam("vars1")
 #' @eval MRGparam("vars2")
+#' @eval MRGparam("addVars1")
+#' @eval MRGparam("addVars2")
+#' @eval MRGparam("useAllVars")
 #' @eval MRGparam("postProcess")
 #' @eval MRGparam("aggr")
 #' @eval MRGparam("na.rm")
@@ -16,16 +19,29 @@
 #' as these are the ones defining the restrictions.  
 #' 
 #' The function will merge the variable names in \code{vars1, vars2, ...}
-#' if they exist. If they are missing, the function will look for variable
-#' names in the attributes of the grids (\code{attr(himg, "vars")}). These
-#' are added by \code{\link{multiResGrid}}, but will often disappear if the
-#' grid has been manipulated, or has been exported to another format for transmission.
-#' 
+#' if they exist. 
 #' If the variables are not given as \code{vars} or attributes, the function
 #' will try to guess them from the column names. Typical column names used by
 #' MRG (mostly temporary variables such as \code{small}, \code{confidential} etc)
 #' will be ignored. If variable names partly coincide with any of these names,
 #' or with \code{count}, \code{res}, \code{geometry}, it is necessary to specify vars.
+#' 
+#' The function can also use "vars" from (\code{attr(himg, "vars")}). These
+#' are added or updated by \code{\link{multiResGrid}} and \code{\link{multiResGrid}}, 
+#' but might disappear if the
+#' grid has been manipulated, or has been exported to another format for transmission.
+#' The function will by default not merge the values of new columns
+#' that have been added outside MRG-functions, instead it will give a warning
+#' that the object has changed. This can be fixed in different ways
+#' 
+#' 
+#' \enumerate{ 
+#' \item{New variables are added to attr(himg, \"vars\") (The function will still issue this warning) }
+#' \item{All merging variables are added to vars1, vars2, etc }
+#' \item{New variables are added to addVars1, addVars2, etc }
+#' \item{All columns are used (set \code{useAllVars = TRUE)}. This is used for all objects, and might 
+#'       cause other isues with repeated variable names in different objects"}
+#' }      
 #' 
 #' The multi-resolution grids must be passed as named parameters if more than two 
 #' are given. 
@@ -149,15 +165,16 @@
 #'            
 #'            
 #' @export
-MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALSE, aggr = "merge", ...) {
+MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars = FALSE, na.rm = TRUE, postProcess = FALSE, aggr = "merge", ...) {
   # To avoid R CMD check notes for missing global variables
   if (!missing(vars1) && inherits(vars1, "data.frame")) stop("vars1 is a data.frame. Did you want
                                           to pass a third MRG-grid? Then it must be named, see the help file.")
-  countw = ID = ID2 = area1 = area2 = NULL
+  countw = ID = ID2 = area1 = area2 = res.1 = Freq = NULL
   dots = list(...)
   #  Separate dots in himgs and vars
   hmgs = dots[grep("himg", names(dots))]
   vvs = dots[grep("vars", names(dots))]
+  addV = dots[grep("allVars", names(dots))]
   if ((inherits(himg1, "data.frame") | inherits(himg1, "sf")) & !missing(himg2)) {
     himgs = list(himg1, himg2)
     if (length(hmgs) > 0) himgs = c(himgs, hmgs)
@@ -168,12 +185,44 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   }  else {
     if (!missing(vars1)) vars = list(vars1) else vars = list(NULL)
     if (!missing(vars2)) vars[[2]] = vars2 else vars = c(vars, list(NULL))
-    if (length(vvs) > 0) vars = c(vars, vvs) else if (length(himgs) > 2) vars = c(vars, list(rep(NULL, length(himgs)-2))) 
+    if (length(vvs) > 0) vars = c(vars, vvs) else if (length(himgs) > 2) vars = c(vars, vector("list", length(himgs)-2)) 
+  }
+
+  if (!missing(addVars1) && is.list(addVars1)) {
+    addVars = addVars1
+  }  else {
+    if (!missing(addVars1)) addVars = list(addVars1) else addVars = list(NULL)
+    if (!missing(addVars2)) addVars[[2]] = addVars2 else addVars = c(addVars, list(NULL))
+    if (length(addV) > 0) addVars = c(addVars, addV) else if (length(himgs) > 2) addVars = c(addVars, vector("list", length(himgs)-2)) 
   }
   
+    
   h1 = himgs[[1]]
+  if (!"res" %in% names(h1)) { 
+    h1$res = sqrt(st_area(h1)) %>% units::set_units(., NULL)
+    if (length(unique(h1$res)) > 10) warning(paste0("res was missing from object himg1",  
+                        " The function attempted to find it from areas of grid cells, but find 
+                        it suspicious that there are ", length(unique(h1$res)), " different resolutions. Please check"))
+  }
   if (is.null(vars[[1]])) {
     vars1 = attr(h1, "vars")
+    addVars1 = addVars[[1]]
+    if (!is.null(addVars1)) {
+      vars1 = c(vars1, addVars1)
+    } else if (useAllVars) {
+      vars1 = getVars(h1)  
+    } else {
+      allVarsh = attr(h1, "allVars")
+      if (!is.null(allVarsh) && !all.equal(allVarsh, getVars(h1))) {
+        warning(cat("The column names have changed after this object was created by an MRG-function. New columns
+                will NOT be merged, unless \n 
+                1. New variables are added to attr(himg1, \"vars\") (The function will still issue this warning) \n
+                2. All merging variables are added to vars1 \n
+                3. New variables are added to addVars1 \n
+                4. All columns are used (set useAllVars = TRUE). This is used for all objects, and might 
+                    cause other isues with repeated variable names in different objects \n"))
+      }
+    } 
     vars1 = vars1[!vars1 %in% c("ID", "res", "area", attr(h1, "sf_column"))] 
   } else vars1 = vars[[1]]
   
@@ -195,6 +244,12 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     #' @importFrom units set_units
     h1 = h1 %>% mutate(area1 = set_units(st_area(h1), NULL))
     h2 = himgs[[il]]
+    if (!"res" %in% names(h2)) { 
+       h2$res = sqrt(st_area(h2)) %>% units::set_units(., NULL)
+       if (length(unique(h2$res)) > 10) warning(paste0("res was missing from object himg", il, 
+                        " The function attempted to find it from areas of grid cells, but find 
+                        it suspicious that there are ", length(unique(h2$res)), " different resolutions. Please check"))
+    }
     sfcol2 = attr(h2, "sf_column")
     #' @importFrom sf st_geometry "st_geometry<-"
     if (sfcol != sfcol2) st_geometry(h2) = sfcol
@@ -207,7 +262,24 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     if (!"count" %in% names(h2)) h2$count = NA
     if (!"countw" %in% names(h2)) h2$countw = NA
     if (is.null(vars[[il]])) {
-      vars2 = attr(h2, "vars") 
+      vars2 = attr(h2, "vars")
+      addVars2 = addVars[[il]]
+      if (!is.null(addVars2)) {
+        vars2 = c(vars2, addVars2)
+      } else if (useAllVars) {
+        vars2 = getVars(h2)  
+      } else {
+        allVarsh = attr(h2, "allVars")
+        if (!is.null(allVarsh) && !all.equal(allVarsh, getVars(h2))) {
+          warning(cat("The column names have changed after this object was created by an MRG-function. New columns
+                will NOT be merged, unless \n 
+                1. New variables are added to attr(himgx, \"vars\") (The function will still issue this warning) \n
+                2. All merging variables are added to varsx \n
+                3. New variables are added to addVarsx \n
+                4. All columns are used (set useAllVars = TRUE). This is used for all objects, and might 
+                    cause other isues with repeated variable names in different objects \n"))
+        }
+      } 
       vars2 = vars2[!vars2 %in% c("ID", "res", "area", attr(h2, "sf_column"))] 
     } else vars2 = vars[[il]]
     if (is.null(vars2)) vars2 = getVars(h2)  
@@ -227,10 +299,20 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     h2tab = aggregate(data.frame(Freq = rep(1, length(hm$ID)), cArea = hm$newArea), by = list(ID2 = hm$ID2), sum)
     h1u = h1tab$ID[h1tab$Freq == 1]
     h2u = h2tab$ID2[h2tab$Freq == 1]
-    unx = which(hm$ID %in% h1u & hm$ID2 %in% h2u)   
+    unx = which(hm$ID %in% h1u & hm$ID2 %in% h2u & hm$res == hm$res.1)   
     une = which(!(hm$ID %in% h1u) & !(hm$ID2 %in% h2u)) 
-    unm1 = which(!h1$ID %in% hm$ID)
-    unm2 = which(!h2$ID %in% hm$ID2)
+    
+    # Find singular overlapping grid cells with different resolution
+    hmii = hm %>% filter(ID %in% h1u, ID2 %in% h2u, res != res.1)
+    if (dim(hmii)[1] > 0) {
+      i1u = hmii %>% filter(res > res.1) %>% pull(ID)
+      if (length(i1u) > 0) h1au = h1 %>% filter(ID %in% i1u) else h1au = NULL
+      i2u = hmii %>% filter(res < res.1) %>% pull(ID2)
+      if (length(i2u) > 0) h2au = h2 %>% filter(ID2 %in% i2u) else h2au = NULL
+    } else h1au = h2au = NULL
+    
+    unm1 = which(!h1$ID %in% c(hm$ID, h1au$ID))
+    unm2 = which(!h2$ID %in% c(hm$ID2, h2au$ID2))
     if (length(une) > 0) stop("Overlap error - could it be that at least one of the multiresolution grids has overlapping grid cells?")
     
     
@@ -240,15 +322,20 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
     h11 = hm[unx,]
     if (length(unm1) > 0) {
       h11 = bind_rows(h11, h1[unm1,])
-      h1ia = which(hm$ID == h1$ID[unm1])
+      h1ia = which(hm$ID %in% h1$ID[unm1])
     } else h1ia = NULL
     if (length(unm2) > 0) {
       h11 = bind_rows(h11, h2[unm2,])
-      h2ia = which(hm$ID2 == h2$ID2[unm2])
+      h2ia = which(hm$ID2 %in% h2$ID2[unm2])
     }
     h1i = unique(c(which(hm$ID %in% h1tab$ID[h1tab$Freq > 1]), h1l))
     h2i = unique(c(which(hm$ID2 %in% h2tab$ID2[h2tab$Freq > 1]), h2l))
     
+    h1u = h1tab %>% filter(Freq == 1) %>% pull(ID)
+    h2u = h2tab %>% filter(Freq == 1) %>% pull(ID2)
+
+       
+    h1tab %>% filter(Freq == 1) %>% left_join(., h2tab, by = join_by(ID == ID2))    
     if (aggr == "merge") {
       if (length(h1i) > 0) {
         h1a = hm[h1i,] %>% arrange(ID)
@@ -283,7 +370,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
         h2a = hm[h2i,] %>% arrange(ID2)
         h2a = h2a %>% mutate(across(!!vars2, ~ .x*cArea.1/cArea.2))
       }
-      h1 = rbind(hm[unx,], h1a, h2a)
+      h1 = rbind(hm[unx,], h1a, h2a, h1au, h2au)
     }
     vars1 = c(vars1, vars2)
     h1$ID = 1:dim(h1)[1]
@@ -294,6 +381,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, na.rm = TRUE, postProcess = FALS
   h1 = h1 %>% select(-area1)
   vars = vars1[-grep("count|weight_|area1", vars1)]
   attr(h1, "vars") = vars
+  attr(h1, "allVars") = getVars(h1)
   if(postProcess) h1 = mergePP(h1, vars = vars1, ...)
   for (ii in 1:length(himgs)) {
     if (sum(h1[[paste0("count", ii)]], na.rm = TRUE) == 0) h1[[paste0("count", ii)]] = NULL
@@ -329,7 +417,7 @@ if (FALSE) {
 
 
 getVars = function(h1, incCount = FALSE) {
-  hnameso = names(h1)
+  hnameso = names(st_drop_geometry(h1))
   hnames = tolower(hnameso)
   if (incCount) {
     rids = grep("weight|geometry|res|small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq|id", hnames)

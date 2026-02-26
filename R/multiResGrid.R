@@ -625,6 +625,7 @@ multiResGrid.list <- function(MRGinp, ifg, vars, weights, countFeatureOrTotal = 
   }
   if ("gridvar" %in% names(himg)) himg = himg[, -grep("gridvar", names(himg))]
   if (!missing(vars)) attr(himg, "vars") = vars
+  attr(himg, "allVars") = getVars(himg)
   if (postProcess) {
     himg = MRGpostProcess(himg, vars, remCols, rounding)
   } else {
@@ -635,6 +636,7 @@ multiResGrid.list <- function(MRGinp, ifg, vars, weights, countFeatureOrTotal = 
     attr(himg, "himgs") = himgs
     attr(himg, "lohs") = lohs
   }
+  class(himg) = c("MRGgrid", class(himg))
   himg
 }
 

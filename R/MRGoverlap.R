@@ -132,7 +132,7 @@ MRGoverlap = function(himg, vars, himg2, action = "sum") {
   hdup = hdup[hdup$ID.x < hdup$ID.y, ]
   
   datjs = NULL
-  ress = unique(himg$res)
+  ress = sort(unique(himg$res))
   for (isep in 2:length(ress)) {
     sep = 0.5*(ress[isep-1] + ress[isep])
     dats = himg[himg$res < sep, ]
