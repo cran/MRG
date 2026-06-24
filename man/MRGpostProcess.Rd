@@ -16,11 +16,17 @@ used for individual farm specific anonymization rules)}
 to FALSE for further analyses. Temporary columns will not be removed if their names 
 partly match the variable names of \code{vars}}
 
-\item{rounding}{either logical (FALSE) or an integer indicating the number 
-of decimal places 
- to be used. Negative values are allowed (such as the default
- value rounding to the closest 10). See also the details
- for \code{digits} in \code{\link{round}}.}
+\item{rounding}{Either 'FALSE', an integer specifying the number of decimal
+                           places to use, or `"varying"`. Negative integers are allowed (for example,
+                           `-1` rounds to the nearest 10); see also the `digits` argument in
+                          \code{\link{round}}.
+
+                           If `rounding = "varying"`, values are rounded according to their leading
+                           digit, following the current default used in Eurostat layers. Most values
+                           are rounded to **one significant digit** (for example, 788 becomes 800 and
+                           53 becomes 50). However, if the first significant digit is 1 or 2, values
+                           are rounded to **two significant digits** instead (for example, 117 becomes
+                           120 and 287 becomes 290).}
 }
 \value{
 The function will return a post-processed multi-resolution grid

@@ -31,6 +31,7 @@
 #' @eval MRGparam("outfile")
 #' @eval MRGparam("checkDominance")
 #' @eval MRGparam("checkReliability")
+#' @eval MRGparam("relLim")
 #' @eval MRGparam("checkPpercent")
 #' @eval MRGparam("pPercent")
 #' @eval MRGparam("pseudoreg")
@@ -162,6 +163,7 @@
 #' @examples
 #' \donttest{
 #' library(sf)
+#' library(dplyr)
 #' if (!require(ggplot2)) print("Plotting of results will not work 
 #'                      without installation of ggplot2")
 #' if (!require(viridis)) print("Some of the plots will not work 
@@ -177,7 +179,7 @@
 #' }
 #' # These are SYNTHETIC agricultural FSS data 
 #' data(ifs_dk) # Census data
-#' ifs_weight = ifs_dk %>% dplyr::filter(Sample == 1) # Extract weighted subsample
+#' ifs_weight = ifs_dk %>% filter(Sample == 1) # Extract weighted subsample
 #' 
 #' # Create spatial data
 #' ifg = fssgeo(ifs_dk, locAdj = "LL")
@@ -245,10 +247,13 @@
 #'# The parameter reliabilitySplit = 15 will divide the data set in 15 groups for the 
 #'# reliabilityCheck.
 #'# A lower value would be recommended, but a high value speeds up the computation for this example
+#' \dontrun{
+#'# The function is rather slow, and a precomputed object can instead be loaded below.
 #' himg5 = multiResGrid(fsl,  vars = c("UAA"), weights = "EXT_MODULE", ifg = fsg, 
 #'                       strat = "STRA_ID_CORE", checkReliability = TRUE, 
 #'                       reliabilitySplit = TRUE, rounding = FALSE, pseudoreg = "REGIONS")
-#'                       
+#'                       }
+#' data(himg5)
 #'# Apply suppreslim to suppress insignificant grid cells
 #'# Show intermediate maps of confidential cells (wait 5 seconds)
 #' pint = ifelse(interactive(), 5, FALSE)
@@ -381,7 +386,6 @@
 #' 
 #' if (require(patchwork)) plots[[1]]  + plots[[2]] + plots[[3]]  + plots[[4]] + 
 #'                               plot_layout(guides = "collect")
-#'  
 #' 
 #' }
 #' 
@@ -418,12 +422,13 @@ multiResGrid.list <- function(MRGinp, ifg, vars, weights, countFeatureOrTotal = 
                               nlarge = 2,
                               plim = 0.85, verbose = FALSE, domEstat = TRUE, 
                               outfile = NULL, checkDominance = TRUE, checkPpercent = FALSE, pPercent = 20,
-                              checkReliability = FALSE, userfun, strat = NULL, confrules = "individual", 
+                              checkReliability = FALSE, relLim = 0.35, userfun, strat = NULL, confrules = "individual", 
                               suppresslim = 0, sumsmall = FALSE, suppresslimSum = NULL,
                               reliabilitySplit = TRUE, pseudoreg = NULL,
                               plotIntermediate = FALSE,  addIntermediate = FALSE,
                               postProcess = TRUE, rounding = "varying", remCols = TRUE, ...) {
   #  To avoid R CMD check notes
+  checkVars(vars)
   hsum = wsum = www = small = weight = data = himgid = dominance = . = NULL
   if (!missing(ifg) && !inherits(ifg, "sf")) stop("ifg is not an sf-object ")
   
@@ -562,7 +567,8 @@ multiResGrid.list <- function(MRGinp, ifg, vars, weights, countFeatureOrTotal = 
     ifgdat = st_drop_geometry(ifgl)
     
       himg = confid(himg, ifgdat, vars, countFeatureOrTotal, mincount, nlarge, plim, domEstat, 
-                    checkDominance, checkPpercent,checkReliability, reliabilitySplit, pPercent, userfun, verbose, ...)
+                    checkDominance, checkPpercent,checkReliability, reliabilitySplit, pPercent, userfun, verbose, 
+                    relLim, ...)
     
     himg$confidential = rowSums(st_drop_geometry(himg[,c("freq", "dom", "pPerc", "ufun", "reliability")])) > 0
     if (verbose) cat("Finished checks, updating multi-resoluion grid \n")
@@ -636,12 +642,29 @@ multiResGrid.list <- function(MRGinp, ifg, vars, weights, countFeatureOrTotal = 
     attr(himg, "himgs") = himgs
     attr(himg, "lohs") = lohs
   }
-  class(himg) = c("MRGgrid", class(himg))
+#  class(himg) = c("MRGgrid", class(himg))
   himg
 }
 
 
 
 
-
+checkVars <- function(vars, protectedNames = protectedNames) {
+  if (missing(vars)) return(invisible(TRUE))
+  protectedNames = c("hsum", "reliability", "dom", "pPerc", "freq", "idcount", "idfail", "vres", "idRem", "ufun", 
+                     "wsum", "www", "small", "weight", "data", "himgid", "dominance")
+  conflicts <- protectedNames[
+    vapply(protectedNames, function(x) {  any(grepl(x, vars, fixed = TRUE)) }, logical(1))  ]
+  
+  if (length(conflicts) > 0) {
+    stop(paste0("The word",
+        if (length(conflicts) == 1) " " else "s ",
+        paste(conflicts, collapse = ", "),
+        if (length(conflicts) == 1) " is" else " are",
+        " used internally in the MRG package, and cannot be used as part of any vars. \n",
+        "The restricted names are: \n",
+        paste(protectedNames, collapse = " ")), call. = FALSE)
+  }
+  invisible(TRUE)
+}
 

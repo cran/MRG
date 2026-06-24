@@ -29,6 +29,7 @@ multiResGrid(MRGinp, ...)
   checkPpercent = FALSE,
   pPercent = 20,
   checkReliability = FALSE,
+  relLim = 0.35,
   userfun,
   strat = NULL,
   confrules = "individual",
@@ -95,6 +96,8 @@ see \code{\link[parallel]{makeCluster}} for more details.}
 \item{checkReliability}{Logical - should the prediction variance be checked, and used for the aggregation?
 This considerably increases computation time}
 
+\item{relLim}{The maximum relative standard error acceptable for the reliability check}
+
 \item{userfun}{This gives the possibility to add a user defined function with additional confidentiality rules which 
 the grid cell has to pass, based on the individual records}
 
@@ -142,11 +145,17 @@ of creation of the multiresolution grid (TRUE), or be done in a separate
 step afterwards (FALSE). The second option is useful when wanting
 to check the confidential grid cells of the final map}
 
-\item{rounding}{either logical (FALSE) or an integer indicating the number 
-of decimal places 
- to be used. Negative values are allowed (such as the default
- value rounding to the closest 10). See also the details
- for \code{digits} in \code{\link{round}}.}
+\item{rounding}{Either 'FALSE', an integer specifying the number of decimal
+                           places to use, or `"varying"`. Negative integers are allowed (for example,
+                           `-1` rounds to the nearest 10); see also the `digits` argument in
+                          \code{\link{round}}.
+
+                           If `rounding = "varying"`, values are rounded according to their leading
+                           digit, following the current default used in Eurostat layers. Most values
+                           are rounded to **one significant digit** (for example, 788 becomes 800 and
+                           53 becomes 50). However, if the first significant digit is 1 or 2, values
+                           are rounded to **two significant digits** instead (for example, 117 becomes
+                           120 and 287 becomes 290).}
 
 \item{remCols}{Logical; Should intermediate columns be removed? Can be set
 to FALSE for further analyses. Temporary columns will not be removed if their names 
@@ -282,6 +291,7 @@ This function will find the highest resolution data set that fulfills the
 \examples{
 \donttest{
 library(sf)
+library(dplyr)
 if (!require(ggplot2)) print("Plotting of results will not work 
                      without installation of ggplot2")
 if (!require(viridis)) print("Some of the plots will not work 
@@ -297,7 +307,7 @@ if (require(giscoR)) {
 }
 # These are SYNTHETIC agricultural FSS data 
 data(ifs_dk) # Census data
-ifs_weight = ifs_dk \%>\% dplyr::filter(Sample == 1) # Extract weighted subsample
+ifs_weight = ifs_dk \%>\% filter(Sample == 1) # Extract weighted subsample
 
 # Create spatial data
 ifg = fssgeo(ifs_dk, locAdj = "LL")
@@ -365,10 +375,13 @@ himg4 = multiResGrid(fsl,  vars = c("UAA"), weights = "EXT_MODULE", ifg = fsg,
 # The parameter reliabilitySplit = 15 will divide the data set in 15 groups for the 
 # reliabilityCheck.
 # A lower value would be recommended, but a high value speeds up the computation for this example
+\dontrun{
+# The function is rather slow, and a precomputed object can instead be loaded below.
 himg5 = multiResGrid(fsl,  vars = c("UAA"), weights = "EXT_MODULE", ifg = fsg, 
                       strat = "STRA_ID_CORE", checkReliability = TRUE, 
                       reliabilitySplit = TRUE, rounding = FALSE, pseudoreg = "REGIONS")
-                      
+                      }
+data(himg5)
 # Apply suppreslim to suppress insignificant grid cells
 # Show intermediate maps of confidential cells (wait 5 seconds)
 pint = ifelse(interactive(), 5, FALSE)
@@ -501,7 +514,6 @@ for (ii in 1:4) {
 
 if (require(patchwork)) plots[[1]]  + plots[[2]] + plots[[3]]  + plots[[4]] + 
                               plot_layout(guides = "collect")
- 
 
 }
 

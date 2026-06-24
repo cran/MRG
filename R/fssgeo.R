@@ -53,6 +53,7 @@ fssgeo = function(ifs, crsOut = NA, geocol = "GEO_LCT", locAdj = FALSE) {
   }
   sf_crs<-NULL
   crss = unique(ifs$crsi)
+  if (length(crss) > 1 & is.na(crsOut)) stop("The data sets has different crs defined, and no common crsOut for transformation was given")
   for (icrs in crss){
     #' @importFrom dplyr filter bind_rows
     df <- ifs %>% filter(crsi == icrs)

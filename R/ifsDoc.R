@@ -1,4 +1,4 @@
-#' Test data sets for the MRG package
+#' Test data set for the MRG package
 #' 
 #' 
 #' Synthetic data set of Danish farming data, similar to the  
@@ -7,7 +7,6 @@
 #' replicate the structure and the distribution of real data,
 #' but where the individual data are different from the real data.
 #' 
-#' The variables are as follows:
 #' @format A data frame with 37,088 rows and 14 variables
 #' \itemize{
 #'   \item COUNTRY The name of the country

@@ -1,5 +1,6 @@
 confid = function(himg, ifgdat, vars, countFeatureOrTotal, mincount, nlarge, plim, domEstat, 
-                  checkDominance, checkPpercent,checkReliability, reliabilitySplit, pPercent, userfun, verbose, ...) {
+                  checkDominance, checkPpercent,checkReliability, reliabilitySplit, pPercent, userfun, verbose, 
+                  relLim, ...) {
 #  To avoid R CMD check notes
   weight = data = dominance = NULL
   
@@ -93,7 +94,7 @@ confid = function(himg, ifgdat, vars, countFeatureOrTotal, mincount, nlarge, pli
         himg[,paste0("vres",ivar)] = vestres
       }
     }
-    nonvalids = suppressWarnings(which(apply(st_drop_geometry(himg[, grep("vres", names(himg))]), 1, max, na.rm = TRUE) > 0.35))
+    nonvalids = suppressWarnings(which(apply(st_drop_geometry(himg[, grep("vres", names(himg))]), 1, max, na.rm = TRUE) > relLim))
     himg$reliability[nonvalids] = TRUE
   }
   

@@ -35,19 +35,25 @@
 #' @eval MRGparam("rounding")
 #' @eval MRGparam("remCols")
 #' @eval MRGparam("locAdj")
+#' @eval MRGparam("crsOut")
 #' @eval MRGparam("ellipsis")
+#' @eval MRGparam("useGridData2")
 #' 
 #' 
 #' @details The function creates a single object, containing both 
 #' the mapped data and the parameters for for further processing.
 #' This assures that all processing is done with the same variables.
 #' 
+#' Some of the sub functions of gridData are not sufficiently protected against too large memory usage, and 
+#' in some cases this can lead to an aborted Rsession. If this happens, it is possible to use 
+#' \code{\link{gridData2}}, which is somewhat slower, but better protected against memory issues.
+#' The usage of this function can here be invoked by setting \code{useGridData2 = TRUE}.
 #' 
 #' @returns A list containing the necessary elements for further processing 
 #' with the \code{MRG}-package, referred to as being of class \code{MRG}.
 #' 
 #' 
-#' 
+
 #' 
 #' @examples
 #' \donttest{
@@ -102,9 +108,11 @@ createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,
                            checkDominance = TRUE, checkReliability = FALSE, userfun = NULL, strat = NULL,
                            confrules = "individual", suppresslim = 0, sumsmall = FALSE, suppresslimSum = 0,
                            reliabilitySplit = TRUE, pseudoreg = NULL, plotIntermediate = FALSE, addIntermediate = FALSE, 
-                           locAdj = "LL", 
+                           locAdj = "LL", crsOut = NA,
                            postProcess = TRUE,
-                           rounding = -1, remCols = TRUE, ...) {
+                           rounding = -1, remCols = TRUE, useGridData2 = FALSE, ...) {
+  
+  checkVars(vars)
   
   if (is.list(ifg) & !inherits(ifg, "data.frame")) {
     if (is.null(srvNames)) if (!is.null(names(ifg))) srvNames = names(ifg) else srvNames = make.names(1:length(ifg))
@@ -126,12 +134,16 @@ createMRGobject = function(ifg, ress = c(1,5,10,20,40)*1000,
     vars = paste(rep(vars, each = length(srvNames)), srvNames, sep = "_")
   }
   
-  if (!inherits(ifg, "sf")) ifg = fssgeo(ifg)
+  if (!inherits(ifg, "sf")) ifg = fssgeo(ifg, crsOut = crsOut)
   
   if (!isFALSE(locAdj)) ifg = locAdjFun(ifg, locAdj, ress[1])
-  
-  gdl = gridData(ifg, res = ress, vars = vars, weights = weights, 
+  if (useGridData2) {
+  gdl = gridData2(ifg, res = ress, vars = vars, weights = weights, 
+                 nclus = nclus, verbose = verbose)  
+  } else {
+    gdl = gridData(ifg, res = ress, vars = vars, weights = weights, 
                                   nclus = nclus, verbose = verbose)  
+  }
   MRGobject = list(MRGinp = gdl, ifg = ifg, ress = ress, vars = vars, weights = weights,
                    mincount = mincount, countFeatureOrTotal = countFeatureOrTotal, #minpos = minpos, 
                    nlarge = nlarge, plim = plim,

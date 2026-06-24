@@ -107,6 +107,7 @@ MRGparam = function(par, extra = "") {
                             calculation of the reliability (if checkReliability = TRUE). It can either give the 
                             number of groups, or if TRUE, it will create groups of approdcimately 50,000 records per group. 
                             If FALSE, the data set will not be split, independent on the size.", 
+               relLim = "@param relLim The maximum relative standard error acceptable for the reliability check",
                locAdj = "@param locAdj parameter to adjust the coordinates if they are exactly on the borders between grid cells. The values
                           can either be FALSE, or \"jitter\" (adding a small random value to the coordinates, essentially spreading
                           them randomly around the real location), \"UR\", \"UL\", \"LR\" or \"LL\", to describe which corner of the grid 
@@ -114,6 +115,10 @@ MRGparam = function(par, extra = "") {
               centre = "@param centre logical; if the coordinate should represent the centre of the grid cell. This
                           should never be TRUE if res is a vector of different resolutions, as the grids will not 
                           have identical starting points",
+              tile_nx = "@param tile_nx The number of tiles in x-direction if it is necessary to split the gridding 
+                            in sub-regions",
+              tile_ny = "@param tile_ny The number of tiles in x-direction if it is necessary to split the gridding 
+                            in sub-regions",
               remZeroes = "@param remZeroes Set to TRUE if the gridding should only be done on a 
                             subset of the data set, for which the value(s) of the variable(s) of interest
                             is larger than zero. If there is more than one variable of interest, the subset
@@ -125,11 +130,17 @@ MRGparam = function(par, extra = "") {
               remCols = "@param remCols Logical; Should intermediate columns be removed? Can be set
                           to FALSE for further analyses. Temporary columns will not be removed if their names 
                           partly match the variable names of \\code{vars}",
-              rounding = "@param rounding either logical (FALSE) or an integer indicating the number 
-                      of decimal places 
-                       to be used. Negative values are allowed (such as the default
-                       value rounding to the closest 10). See also the details
-                       for \\code{digits} in \\code{\\link{round}}.",
+              rounding = "@param rounding Either 'FALSE', an integer specifying the number of decimal
+                           places to use, or `\"varying\"`. Negative integers are allowed (for example,
+                           `-1` rounds to the nearest 10); see also the `digits` argument in
+                          \\code{\\link{round}}.
+
+                           If `rounding = \"varying\"`, values are rounded according to their leading
+                           digit, following the current default used in Eurostat layers. Most values
+                           are rounded to **one significant digit** (for example, 788 becomes 800 and
+                           53 becomes 50). However, if the first significant digit is 1 or 2, values
+                           are rounded to **two significant digits** instead (for example, 117 becomes
+                           120 and 287 becomes 290).",
               na.rm = "@param na.rm Should NA values be removed when summing values (essentially
                           treating them equal to zero) ",
               action = "@param action How to treat the values of overlapping grid cells. Possible values are:
@@ -157,7 +168,8 @@ MRGparam = function(par, extra = "") {
               borders2 = "@param borders A polygon object with borders and country codes for creation of INSPIRE coordinate IDs.
                               This will typically be a NUTS-object that can be downloaded from GISCO: giscoR::gisco_get_nuts(nuts_level = 0, epsg = 3035).",
               cntrCol = "@param cntrCol The column with country information, if this is already present in the data",
-              xlim = "@param xlim The limits for the x-axis. The default is to use the bounding box of the grid.",
+              xlim = "@param xlim The limits for the x-axis. The default is to use the bounding box of the grid.
+                       if xlim = \"EU\", the mainland limits of EU will be used",
               ylim = "@param ylim The limits for the y-axis. The default is to use the bounding box of the grid.",
               title = "@param title The title of the plot",
               crs = "@param crs The coordinate reference system (CRS) into which all data should be projected before plotting. 
@@ -165,7 +177,7 @@ MRGparam = function(par, extra = "") {
               clip = "@param clip Logical; should the grid be clipped to the borders object (if exsisting)?",
               limits = "@param limits Either \\code{NULL} to use the default scale range or a numeric vector of 
                            length two providing limits of the scale. Use NA to refer to the existing minimum or maximum. See
-                           \\code{\\link[ggplot2]{continuous_scale}} for more details",
+                           \\code{\\link[ggplot2]{continuous_scale}} for more details.",
               transform = "@param transform Possible transformation of the color scale, typical values can be  \\code{\"log\"},
                           \\code{\"log10\"} or \\code{\"sqrt\"}, based on available transformations in the 
                           \\code{scales} package. See for example \\code{\\link[scales]{transform_log}} and other transformations for
@@ -197,7 +209,10 @@ MRGparam = function(par, extra = "") {
                            neither lat-lon or projected",
               aggr = "@param aggr Should data be aggregated to the largest grid cell (\\code{aggr = \"merge\"}),
                             or should data from larger grid cells be disaggregated to smaller grid cells
-                               \\code{(aggr = \"disaggr\")}"
+                               \\code{(aggr = \"disaggr\")}",
+              useGridData2 = "@param useGridData2 This will rather use \\code{\\link{gridData2}} for creating the 
+                            hierarchical grids. The function is somewhat slower, but better protected against
+                            memory issues and possible aborted R sessions"
               
               )
 paste(ret, extra)

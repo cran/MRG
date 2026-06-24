@@ -37,9 +37,11 @@ createMRGobject(
   plotIntermediate = FALSE,
   addIntermediate = FALSE,
   locAdj = "LL",
+  crsOut = NA,
   postProcess = TRUE,
   rounding = -1,
   remCols = TRUE,
+  useGridData2 = FALSE,
   ...
 )
 
@@ -157,20 +159,32 @@ can either be FALSE, or "jitter" (adding a small random value to the coordinates
 them randomly around the real location), "UR", "UL", "LR" or "LL", to describe which corner of the grid 
 cell the location belong (upper right, upper left, lower right or lower left).}
 
+\item{crsOut}{The coordinate reference system (crs) to be used}
+
 \item{postProcess}{Logical; should the postprocessing be done as part
 of creation of the multiresolution grid (TRUE), or be done in a separate 
 step afterwards (FALSE). The second option is useful when wanting
 to check the confidential grid cells of the final map}
 
-\item{rounding}{either logical (FALSE) or an integer indicating the number 
-of decimal places 
- to be used. Negative values are allowed (such as the default
- value rounding to the closest 10). See also the details
- for \code{digits} in \code{\link{round}}.}
+\item{rounding}{Either 'FALSE', an integer specifying the number of decimal
+                           places to use, or `"varying"`. Negative integers are allowed (for example,
+                           `-1` rounds to the nearest 10); see also the `digits` argument in
+                          \code{\link{round}}.
+
+                           If `rounding = "varying"`, values are rounded according to their leading
+                           digit, following the current default used in Eurostat layers. Most values
+                           are rounded to **one significant digit** (for example, 788 becomes 800 and
+                           53 becomes 50). However, if the first significant digit is 1 or 2, values
+                           are rounded to **two significant digits** instead (for example, 117 becomes
+                           120 and 287 becomes 290).}
 
 \item{remCols}{Logical; Should intermediate columns be removed? Can be set
 to FALSE for further analyses. Temporary columns will not be removed if their names 
 partly match the variable names of \code{vars}}
+
+\item{useGridData2}{This will rather use \code{\link{gridData2}} for creating the 
+hierarchical grids. The function is somewhat slower, but better protected against
+memory issues and possible aborted R sessions}
 
 \item{...}{Other parameters to underlying print functions}
 
@@ -189,6 +203,11 @@ Prints MRG-objects
 The function creates a single object, containing both 
 the mapped data and the parameters for for further processing.
 This assures that all processing is done with the same variables.
+
+Some of the sub functions of gridData are not sufficiently protected against too large memory usage, and 
+in some cases this can lead to an aborted Rsession. If this happens, it is possible to use 
+\code{\link{gridData2}}, which is somewhat slower, but better protected against memory issues.
+The usage of this function can here be invoked by setting \code{useGridData2 = TRUE}.
 }
 \examples{
 \donttest{

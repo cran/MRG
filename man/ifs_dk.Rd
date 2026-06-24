@@ -3,7 +3,7 @@
 \docType{data}
 \name{ifs_dk}
 \alias{ifs_dk}
-\title{Test data sets for the MRG package}
+\title{Test data set for the MRG package}
 \format{
 A data frame with 37,088 rows and 14 variables
 \itemize{
@@ -35,9 +35,6 @@ replicate the structure and the distribution of real data,
 but where the individual data are different from the real data.
 }
 \details{
-The variables are as follows:
-
-
 For practical purposes, we have derived a synthetic data set from the 
 original 2020 agricultural census micro data. 
 Although synthetic data sets are a feasible way to provide public access 

@@ -174,12 +174,15 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
   #  Separate dots in himgs and vars
   hmgs = dots[grep("himg", names(dots))]
   vvs = dots[grep("vars", names(dots))]
-  addV = dots[grep("allVars", names(dots))]
+  addV = dots[grep("addVars", names(dots))]
   if ((inherits(himg1, "data.frame") | inherits(himg1, "sf")) & !missing(himg2)) {
     himgs = list(himg1, himg2)
     if (length(hmgs) > 0) himgs = c(himgs, hmgs)
   } else himgs = himg1
   if (length(himgs) <=1) stop("not enough grids to combine")  
+  himgs <- normalize_himgs(himgs) # correct names of count and countw variables
+  
+  
   if (!missing(vars1) && is.list(vars1)) {
     vars = vars1
   }  else {
@@ -204,6 +207,14 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
                         " The function attempted to find it from areas of grid cells, but find 
                         it suspicious that there are ", length(unique(h1$res)), " different resolutions. Please check"))
   }
+  
+  vars    <- pad_list(vars, length(himgs))
+  addVars <- pad_list(addVars, length(himgs))
+  for (i in seq_along(himgs)) {
+    vars[i]    <- list(normalize_var_names(vars[[i]], himgs[[i]]))
+    addVars[i] <- list(normalize_var_names(addVars[[i]], himgs[[i]]))
+  }
+  
   if (is.null(vars[[1]])) {
     vars1 = attr(h1, "vars")
     addVars1 = addVars[[1]]
@@ -228,17 +239,19 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
   
   if (is.null(vars1)) vars1 = getVars(h1)  
   #' @importFrom dplyr rename
-  vars1 = c("count1", "countw1", vars1, names(h1)[grep("weight_", names(h1))])
-  if (!"count" %in% names(h1)) h1$count = NA
-  if (!"countw" %in% names(h1)) h1$countw = NA
-  h1 = h1 %>% rename(count1 = count, countw1 = countw)
+  count_vars_h1 <- grep("^count[0-9]+$|^countw[0-9]+$", names(h1), value = TRUE)
+  vars1 <- c( count_vars_h1, vars1,names(h1)[grep("^weight_", names(h1))])  
+  
   if (!"ID" %in% names(h1)) {
-    h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
+    h1$ID <- seq_len(nrow(h1))
   } else if (length(unique(h1$ID)) < length(h1$ID)) {
-    h1 = h1 %>% mutate(ID = 1:dim(h1)[1])
+    h1$ID <- seq_len(nrow(h1))
     cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
     
   }
+
+
+  
   sfcol = attr(h1, "sf_column")
   for (il in 2:length(himgs)){
     #' @importFrom units set_units
@@ -254,14 +267,14 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
     #' @importFrom sf st_geometry "st_geometry<-"
     if (sfcol != sfcol2) st_geometry(h2) = sfcol
     if (!"ID" %in% names(h2)) {
-      h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
+      h2$ID <- seq_len(nrow(h2))
     } else if (length(unique(h2$ID)) < length(h2$ID)) {
-      h2 = h2 %>% mutate(ID = 1:dim(h2)[1])
+      h2$ID <- seq_len(nrow(h2))
       cat("Object with repeated IDs, it was fixed here, but this could indicate overlapping grid cells, please check \n")
     }
-    if (!"count" %in% names(h2)) h2$count = NA
-    if (!"countw" %in% names(h2)) h2$countw = NA
-    if (is.null(vars[[il]])) {
+
+    
+      if (is.null(vars[[il]])) {
       vars2 = attr(h2, "vars")
       addVars2 = addVars[[il]]
       if (!is.null(addVars2)) {
@@ -284,8 +297,17 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
     } else vars2 = vars[[il]]
     if (is.null(vars2)) vars2 = getVars(h2)  
     h2 = h2 %>% mutate(area2 = set_units(st_area(h2), NULL))    
-    h2 = h2 %>% rename(!!paste0("count", il) := count, !!paste0("countw", il) := countw, ID2 = ID)
-    vars2 = c(paste0("count", il), paste0("countw", il), vars2, names(h2)[grep("weight_", names(h2))])
+#    h2 = h2 %>% rename(!!paste0("count", il) := count, !!paste0("countw", il) := countw, ID2 = ID)
+    h2 = h2 %>% rename(ID2 = ID)
+    if (length(grep("^count[0-9]+$", names(h2))) == 0) {
+      h2[[paste0("count", il)]] <- NA_real_
+    }
+    if (length(grep("^countw[0-9]+$", names(h2))) == 0) {
+      h2[[paste0("countw", il)]] <- NA_real_
+    }
+    count_vars_h2 <- grep("^count[0-9]+$|^countw[0-9]+$", names(h2), value = TRUE)
+    vars2 <- c( count_vars_h2, vars2, names(h2)[grep("^weight_", names(h2))])
+    #    vars2 = c(paste0("count", il), paste0("countw", il), vars2, names(h2)[grep("weight_", names(h2))])
     allvars = c(vars1, vars2)
     if (any(duplicated(allvars))) stop(cat("There are variables with same name, please rename:", allvars[duplicated(allvars)], "\n"))
     #' @importFrom sf st_intersection
@@ -382,6 +404,7 @@ MRGmerge = function(himg1, himg2, vars1, vars2, addVars1, addVars2, useAllVars =
   vars = vars1[-grep("count|weight_|area1", vars1)]
   attr(h1, "vars") = vars
   attr(h1, "allVars") = getVars(h1)
+
   if(postProcess) h1 = mergePP(h1, vars = vars1, ...)
   for (ii in 1:length(himgs)) {
     if (sum(h1[[paste0("count", ii)]], na.rm = TRUE) == 0) h1[[paste0("count", ii)]] = NULL
@@ -424,7 +447,170 @@ getVars = function(h1, incCount = FALSE) {
   } else {
     rids = grep("count|weight|geometry|res|small|reliability|idcount|idfail|vres|idRem|confidential|ufun|dom|freq|id", hnames)
   }
-  nonum = which(!unlist(lapply(h1, is.numeric) ))
+  nonum = which(!unlist(lapply(st_drop_geometry(h1), is.numeric) ))
   rids = unique(c(rids, nonum))
   if (length(rids) > 0) hnameso[-rids] else hnameso
+}
+
+
+
+# Detect count/countw columns with or without numeric suffixes
+count_cols <- function(x) {
+  nms <- names(x)
+  
+  count  <- grep("^count[0-9]*$",  nms, value = TRUE)
+  countw <- grep("^countw[0-9]*$", nms, value = TRUE)
+  
+  list(count = count, countw = countw)
+}
+
+
+# Extract existing numeric suffixes from count/countw columns
+count_ids <- function(x) {
+  nms <- names(x)
+  
+  ids <- c(
+    sub("^count([0-9]+)$", "\\1",
+        grep("^count[0-9]+$", nms, value = TRUE)),
+    sub("^countw([0-9]+)$", "\\1",
+        grep("^countw[0-9]+$", nms, value = TRUE))
+  )
+  
+  as.integer(ids)
+}
+
+
+# Find next available source ID
+next_count_id <- function(x) {
+  ids <- count_ids(x)
+  ids <- ids[!is.na(ids)]
+  
+  if (length(ids) == 0) {
+    1L
+  } else {
+    max(ids) + 1L
+  }
+}
+
+
+# Rename unsuffixed count/countw to a given source ID
+rename_count_pair <- function(x, id) {
+  
+  if ("count" %in% names(x)) {
+    names(x)[names(x) == "count"] <- paste0("count", id)
+  }
+  
+  if ("countw" %in% names(x)) {
+    names(x)[names(x) == "countw"] <- paste0("countw", id)
+  }
+  
+  x
+}
+
+normalize_count_list <- function(...) {
+  imgs <- list(...)
+  
+  if (is.null(names(imgs)) || any(names(imgs) == "")) {
+    stop("All input objects must be named, e.g. himg1 = x, himg2 = y.")
+  }
+  
+  out <- list()
+  used_ids <- integer(0)
+  
+  for (nm in names(imgs)) {
+    x <- imgs[[nm]]
+    
+    existing_ids <- count_ids(x)
+    
+    if (length(existing_ids) > 0) {
+      used_ids <- union(used_ids, existing_ids)
+      out[[nm]] <- x
+      next
+    }
+    
+    id <- if (length(used_ids) == 0) 1L else max(used_ids) + 1L
+    
+    x <- normalize_count_names(x, id = id)
+    
+    used_ids <- union(used_ids, id)
+    out[[nm]] <- x
+  }
+  
+  out
+}
+
+# Normalize one object:
+# - If it has count/countw, rename them to next available suffix
+# - If it already only has count1/countw1 etc., leave unchanged
+normalize_count_names <- function(x, id = NULL) {
+  has_plain_count  <- "count"  %in% names(x)
+  has_plain_countw <- "countw" %in% names(x)
+  
+  if (!has_plain_count && !has_plain_countw) {
+    return(x)
+  }
+  
+  if (is.null(id)) {
+    id <- next_count_id(x)
+  }
+  
+  rename_count_pair(x, id)
+}
+normalize_himgs <- function(himgs) {
+  used_ids <- integer(0)
+  for (i in seq_along(himgs)) {
+    x <- himgs[[i]]
+    existing_ids <- count_ids(x)
+    if (length(existing_ids) > 0) {
+      used_ids <- union(used_ids, existing_ids)
+    }
+    if (has_plain_count(x)) {
+      id <- if (length(used_ids) == 0) {
+        1L
+      } else {
+        max(used_ids) + 1L
+      }
+      x <- rename_count_pair(x, id)
+      used_ids <- union(used_ids, id)
+      himgs[[i]] <- x
+    } else {
+      # No count/countw columns: leave object unchanged
+      himgs[[i]] <- x
+    }
+  }
+  himgs
+}
+
+
+
+has_plain_count <- function(x) {
+  any(names(x) %in% c("count", "countw"))
+}
+
+has_numbered_count <- function(x) {
+  any(grepl("^count[0-9]+$", names(x))) ||
+    any(grepl("^countw[0-9]+$", names(x)))
+}
+
+normalize_var_names <- function(v, x) {
+  if (is.null(v) || length(v) == 0) return(NULL)
+  
+  count_col  <- grep("^count[0-9]+$", names(x), value = TRUE)
+  countw_col <- grep("^countw[0-9]+$", names(x), value = TRUE)
+  
+  if (length(count_col) > 0) {
+    v[v == "count"] <- count_col[1]
+  }
+  
+  if (length(countw_col) > 0) {
+    v[v == "countw"] <- countw_col[1]
+  }
+  
+  v[!is.na(v)]
+}
+
+pad_list <- function(x, n) {
+  if (is.null(x)) x <- vector("list", n)
+  length(x) <- n
+  x
 }

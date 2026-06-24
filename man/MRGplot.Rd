@@ -46,7 +46,8 @@ object will also be used to clip the grid if \code{clip = TRUE}.}
 
 \item{title}{The title of the plot}
 
-\item{xlim}{The limits for the x-axis. The default is to use the bounding box of the grid.}
+\item{xlim}{The limits for the x-axis. The default is to use the bounding box of the grid.
+if xlim = "EU", the mainland limits of EU will be used}
 
 \item{ylim}{The limits for the y-axis. The default is to use the bounding box of the grid.}
 
@@ -57,7 +58,7 @@ If not specified, will use the CRS defined in the first sf layer of the plot.}
 
 \item{limits}{Either \code{NULL} to use the default scale range or a numeric vector of 
 length two providing limits of the scale. Use NA to refer to the existing minimum or maximum. See
-\code{\link[ggplot2]{continuous_scale}} for more details}
+\code{\link[ggplot2]{continuous_scale}} for more details.}
 
 \item{transform}{Possible transformation of the color scale, typical values can be  \code{"log"},
 \code{"log10"} or \code{"sqrt"}, based on available transformations in the 

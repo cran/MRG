@@ -87,6 +87,10 @@ MRGplot = function(himg, var, linecolor, option = "D", lwd = 0, lwdb = 1, border
   } else if (!rlang::quo_is_symbol(rlang::enquo(var))) {
     stop("The variable name must be unqouted - in typical dplyr-style")
   }
+  if (!missing(xlim) && length(xlim) == 1 && xlim == "EU") {
+    xlim = c(2600000, 6000000)
+    ylim = c(1500000, 5300000)
+  }
   if (!missing(borders)) {
     if (st_crs(himg) != st_crs(borders)) borders = st_transform(borders, crs = st_crs(himg))
     if (clip) himg = st_intersection(himg, borders)

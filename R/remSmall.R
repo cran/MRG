@@ -43,7 +43,7 @@
 #' @examples
 #' \donttest{
 #' library(sf)
-#' library(sf)
+#' library(dplyr)
 #' if (!require(ggplot2)) print("Plotting of results will not work without installation of ggplot2")
 #' if (!require(viridis)) print("Some of the plots will not work without installation of ggplot2")
 #' if (!require(patchwork)) print("Some of the plots will not work without installation of patchwork")
@@ -56,7 +56,7 @@
 #' }
 #' # These are SYNTHETIC agricultural FSS data 
 #' data(ifs_dk) # Census data
-#' ifs_weight = ifs_dk %>% dplyr::filter(Sample == 1) # Extract weighted subsample
+#' ifs_weight = ifs_dk %>% filter(Sample == 1) # Extract weighted subsample
 #' 
 #' # Create spatial data
 #' ifg = fssgeo(ifs_dk, locAdj = "LL")
